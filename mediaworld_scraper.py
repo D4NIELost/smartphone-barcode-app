@@ -30,11 +30,11 @@ BRANDS = {
 # Categories to scrape for each brand
 # Use None for brands that need filter-based scraping (no specific category URL)
 CATEGORIES = {
-    "Samsung": ["smartphone", "smartwatch"],
+    "Samsung": ["smartphone", "smartwatch", "tablet"],
     "Google": None,  # Will use filter-based scraping
     "Xiaomi": ["smartphone"],
     "OPPO": ["smartphone"],
-    "Honor": ["smartphone"],
+    "Honor": ["smartphone", "wearables", "tablet"],
     "ZTE": ["blade", "nubia"],
     "Motorola": None  # Will use filter-based scraping
 }
@@ -188,14 +188,11 @@ def determine_product_type(model, category):
     """Determine product type based on model name and category"""
     model_lower = model.lower()
     if 'smartwatch' in model_lower or 'smartband' in model_lower or 'anello' in model_lower or 'ring' in model_lower:
-        if 'smartband' in model_lower or 'fit' in model_lower:
-            return 'Smartband'
-        elif 'anello' in model_lower or 'ring' in model_lower:
-            return 'Smartband'
-        else:
-            return 'Smartwatch'
-    elif category == 'smartwatch':
         return 'Smartwatch'
+    elif category == 'smartwatch' or category == 'wearables':
+        return 'Smartwatch'
+    elif category == 'tablet':
+        return 'Tablet'
     else:
         return 'Smartphone'
 
@@ -404,6 +401,14 @@ def scrape_category_products(brand, category):
             model = re.sub(r'\s+' + re.escape(brand) + r'\s+', ' ', model, flags=re.I)
             model = model.strip()
             
+            # Remove "Tablet" prefix from model name
+            model = re.sub(r'^Tablet\s+', '', model, flags=re.I)
+            model = re.sub(r',\s*Tablet\s+', ', ', model, flags=re.I)
+            
+            # Remove display dimensions (e.g., "8,7 """, "11 """, "10.1""")
+            model = re.sub(r'\s*\d+[,.]?\d*\s*["\']+\s*', '', model, flags=re.I)
+            model = re.sub(r'\s*\d+[,.]?\d*\s*["\']+\s*,\s*', ', ', model, flags=re.I)
+            
             # Remove memory from model name (patterns like "4/128GB", "256GB", "8+256GB")
             # More precise patterns to avoid leaving extra commas
             model = re.sub(r'\s*\d+/\d+\s*(GB|TB|MB)\s*', '', model, flags=re.I)
@@ -471,6 +476,9 @@ def scrape_category_products(brand, category):
             # Use color from model as fallback if page extraction fails
             if not color and color_from_model:
                 color = color_from_model
+            # Replace empty color with "n/n"
+            if not color or color.strip() == '':
+                color = 'n/n'
             
             memory = extract_memory(prod_soup, model)
             
@@ -930,6 +938,14 @@ def scrape_brand_only(brand):
             model = re.sub(r'\s+' + re.escape(brand) + r'\s+', ' ', model, flags=re.I)
             model = model.strip()
             
+            # Remove "Tablet" prefix from model name
+            model = re.sub(r'^Tablet\s+', '', model, flags=re.I)
+            model = re.sub(r',\s*Tablet\s+', ', ', model, flags=re.I)
+            
+            # Remove display dimensions (e.g., "8,7 """, "11 """, "10.1""")
+            model = re.sub(r'\s*\d+[,.]?\d*\s*["\']+\s*', '', model, flags=re.I)
+            model = re.sub(r'\s*\d+[,.]?\d*\s*["\']+\s*,\s*', ', ', model, flags=re.I)
+            
             # Remove memory from model name (patterns like "4/128GB", "256GB", "8+256GB")
             # More precise patterns to avoid leaving extra commas
             model = re.sub(r'\s*\d+/\d+\s*(GB|TB|MB)\s*', '', model, flags=re.I)
@@ -997,6 +1013,9 @@ def scrape_brand_only(brand):
             # Use color from model as fallback if page extraction fails
             if not color and color_from_model:
                 color = color_from_model
+            # Replace empty color with "n/n"
+            if not color or color.strip() == '':
+                color = 'n/n'
             
             memory = extract_memory(prod_soup, model)
             
@@ -1145,7 +1164,7 @@ def main():
         
         output_file = "mediaworld_products.csv"
         with open(output_file, "w", newline='', encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["Marca", "Modello", "Memoria", "Colore", "Codice_PIM"])
+            writer = csv.DictWriter(f, fieldnames=["Marca", "Tipo", "Modello", "Memoria", "Colore", "Codice_PIM"])
             writer.writeheader()
             for product in all_products:
                 writer.writerow(product)

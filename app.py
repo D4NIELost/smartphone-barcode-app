@@ -25,6 +25,8 @@ if 'selected_memory' not in st.session_state:
     st.session_state.selected_memory = None
 if 'model_has_single_memory' not in st.session_state:
     st.session_state.model_has_single_memory = False
+if 'skipped_color_selection' not in st.session_state:
+    st.session_state.skipped_color_selection = False
 
 def load_database():
     """Load phone database from CSV file"""
@@ -174,6 +176,7 @@ def main_app():
             st.session_state.selected_memory = None
             st.session_state.selected_variant = None
             st.session_state.model_has_single_memory = False
+            st.session_state.skipped_color_selection = False
             st.rerun()
     with col3:
         if st.button("🚪 Logout", width='stretch'):
@@ -184,12 +187,21 @@ def main_app():
             st.session_state.selected_memory = None
             st.session_state.selected_variant = None
             st.session_state.model_has_single_memory = False
+            st.session_state.skipped_color_selection = False
             st.rerun()
 
 def go_back():
     """Navigate back in the hierarchy"""
     if st.session_state.selected_variant:
         st.session_state.selected_variant = None
+        # If color selection was skipped, also reset memory to go back to model view
+        if st.session_state.skipped_color_selection:
+            st.session_state.skipped_color_selection = False
+            if st.session_state.model_has_single_memory:
+                st.session_state.selected_memory = None
+                st.session_state.selected_model = None
+            else:
+                st.session_state.selected_memory = None
     elif st.session_state.selected_memory:
         # If model has single memory, skip memory view and go directly to model
         if st.session_state.model_has_single_memory:
@@ -264,7 +276,7 @@ def show_categories_view(df):
     category_emojis = {
         'Smartphone': '📱',
         'Smartwatch': '⌚',
-        'Smartband': '⌚'
+        'Tablet': '📱'
     }
     
     # Display category buttons
@@ -292,8 +304,7 @@ def show_models_view(df):
     # Category emojis for model buttons
     category_emojis = {
         'Smartphone': '📲',
-        'Smartwatch': '⌚',
-        'Smartband': '⌚'
+        'Smartwatch': '⌚'
     }
     model_emoji = category_emojis.get(category, '📲')
     
@@ -393,6 +404,16 @@ def show_colors_view(df):
     # If still empty after safety check, show error message
     if brand_model_memory_df.empty:
         st.warning("Nessuna variante disponibile per questo prodotto.")
+        return
+    
+    # Check if all colors are "n/n" - if so, skip directly to barcode
+    colors = brand_model_memory_df['Colore'].unique()
+    all_n_n = all(str(c).strip().lower() == 'n/n' for c in colors)
+    if all_n_n and len(colors) == 1:
+        # Automatically select the variant and skip to barcode
+        st.session_state.selected_variant = brand_model_memory_df.iloc[0].to_dict()
+        st.session_state.skipped_color_selection = True
+        st.rerun()
         return
     
     # Color mapping for common colors
