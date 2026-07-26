@@ -10,7 +10,7 @@ import os
 # PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
 PASSWORD = None  # Set to None to disable password authentication
 CSV_FILE = "database_telefoni.csv"
-APP_VERSION = "1.1"  # Version to verify deployment
+APP_VERSION = "1.2"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -265,8 +265,8 @@ def show_categories_view(df):
     # Filter by brand
     brand_df = df[df['Marca'] == brand]
     
-    # Get categories from Tipo column
-    categories = brand_df['Tipo'].unique()
+    # Get categories from Tipo column preserving database order
+    categories = brand_df['Tipo'].drop_duplicates()
     categories = [c for c in categories if pd.notna(c) and c != '']
     
     # If only one category, skip to models
@@ -285,7 +285,7 @@ def show_categories_view(df):
     
     # Display category buttons
     cols = st.columns(min(2, len(categories)))
-    for idx, category in enumerate(sorted(categories)):
+    for idx, category in enumerate(categories):
         col_idx = idx % len(cols)
         with cols[col_idx]:
             emoji = category_emojis.get(category, '📱')
