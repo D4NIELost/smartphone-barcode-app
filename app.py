@@ -299,7 +299,7 @@ def show_models_view(df):
     # Filter by brand and category using Tipo column
     category_df = df[(df['Marca'] == brand) & (df['Tipo'] == category)]
     
-    models = category_df['Modello'].unique()
+    models = category_df['Modello'].drop_duplicates()
     
     # Category emojis for model buttons
     category_emojis = {
