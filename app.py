@@ -9,6 +9,7 @@ import os
 # Configuration
 PASSWORD = "negozio2026"  # Change this to your desired password
 CSV_FILE = "database_telefoni.csv"
+APP_VERSION = "1.1"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -132,6 +133,7 @@ def login_page():
 def main_app():
     """Display main application"""
     st.title("📱 Catalogo Dispositivi")
+    st.caption(f"Versione: {APP_VERSION}")
     st.markdown("---")
     
     # Load database
