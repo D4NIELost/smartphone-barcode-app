@@ -10,7 +10,7 @@ import os
 # PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
 PASSWORD = None  # Set to None to disable password authentication
 CSV_FILE = "database_telefoni.csv"
-APP_VERSION = "1.3"  # Version to verify deployment
+APP_VERSION = "1.4"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -311,44 +311,35 @@ def show_models_view(df):
     }
     model_emoji = category_emojis.get(category, '📲')
     
-    # Calculate number of rows for horizontal filling
-    num_cols = min(2, len(models))
-    num_rows = (len(models) + num_cols - 1) // num_cols
-    
-    cols = st.columns(num_cols)
-    for row in range(num_rows):
-        for col in range(num_cols):
-            idx = row * num_cols + col
-            if idx < len(models):
-                model = models.iloc[idx]
-                with cols[col]:
-                    # Try to load model image
-                    model_filename = model.lower().replace(' ', '_').replace('/', '_')
-                    model_path = f"images/models/{model_filename}.png"
-                    if os.path.exists(model_path):
-                        # Load image and add white background if transparent
-                        img = Image.open(model_path)
-                        if img.mode in ('RGBA', 'LA', 'P'):
-                            background = Image.new('RGB', img.size, (255, 255, 255))
-                            if img.mode == 'P':
-                                img = img.convert('RGBA')
-                            if img.mode in ('RGBA', 'LA'):
-                                background.paste(img, mask=img.split()[-1])
-                                img = background
-                            else:
-                                img = img.convert('RGB')
-                        # Resize and crop to 720x390
-                        img = resize_and_crop(img, 720, 390)
-                        st.image(img, width='stretch')
-                    
-                    if st.button(f"{model_emoji} {model}", key=f"model_{idx}", width='stretch'):
-                        st.session_state.selected_model = model
-                        # Check if model has single memory (filter out empty/NaN and "n/n")
-                        model_df = df[df['Modello'] == model]
-                        memories = model_df['Memoria'].dropna().unique()
-                        memories = [m for m in memories if m and str(m).strip() != '' and str(m).strip().lower() != 'n/n']
-                        st.session_state.model_has_single_memory = (len(memories) <= 1)
-                        st.rerun()
+    # Use simple sequential rendering to ensure consistent order across devices
+    for idx, model in enumerate(models):
+        # Try to load model image
+        model_filename = model.lower().replace(' ', '_').replace('/', '_')
+        model_path = f"images/models/{model_filename}.png"
+        if os.path.exists(model_path):
+            # Load image and add white background if transparent
+            img = Image.open(model_path)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                if img.mode in ('RGBA', 'LA'):
+                    background.paste(img, mask=img.split()[-1])
+                    img = background
+                else:
+                    img = img.convert('RGB')
+            # Resize and crop to 720x390
+            img = resize_and_crop(img, 720, 390)
+            st.image(img, width='stretch')
+        
+        if st.button(f"{model_emoji} {model}", key=f"model_{idx}", width='stretch'):
+            st.session_state.selected_model = model
+            # Check if model has single memory (filter out empty/NaN and "n/n")
+            model_df = df[df['Modello'] == model]
+            memories = model_df['Memoria'].dropna().unique()
+            memories = [m for m in memories if m and str(m).strip() != '' and str(m).strip().lower() != 'n/n']
+            st.session_state.model_has_single_memory = (len(memories) <= 1)
+            st.rerun()
 
 def show_memories_view(df):
     """Display memory options for selected model"""
