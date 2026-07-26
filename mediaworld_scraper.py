@@ -30,7 +30,7 @@ BRANDS = {
 # Categories to scrape for each brand
 # Use None for brands that need filter-based scraping (no specific category URL)
 CATEGORIES = {
-    "Samsung": ["smartphone", "smartwatch", "tablet"],
+    "Samsung": ["smartphone", "smartwatch", "tablet", "notebook"],
     "Google": None,  # Will use filter-based scraping
     "Xiaomi": ["smartphone"],
     "OPPO": ["smartphone"],
@@ -193,6 +193,8 @@ def determine_product_type(model, category):
         return 'Smartwatch'
     elif category == 'tablet':
         return 'Tablet'
+    elif category == 'notebook':
+        return 'Notebook'
     else:
         return 'Smartphone'
 
@@ -268,14 +270,18 @@ def scrape_category_products(brand, category):
         # Apply MediaWorld-only filter to exclude marketplace
         try:
             print("Applying MediaWorld-only filter...")
-            mw_filter = driver.find_element(By.ID, "MediaWorld-marketplace")
-            if mw_filter and not mw_filter.is_selected():
-                driver.execute_script("arguments[0].click();", mw_filter)
-                print("✓ MediaWorld filter applied")
-                time.sleep(3)  # Wait for filter to apply
+            # Navigate to URL with marketplace parameter instead of clicking
+            current_url = driver.current_url
+            if 'marketplace' not in current_url:
+                separator = '&' if '?' in current_url else '?'
+                filtered_url = f"{current_url}{separator}marketplace=MediaWorld"
+                driver.get(filtered_url)
+                print(f"✓ Navigated to filtered URL")
+                time.sleep(5)
+            else:
+                print("✓ Marketplace filter already in URL")
         except Exception as e:
             print(f"Could not apply MediaWorld filter: {e}")
-
         # Click "Show more" button until no more products
         max_clicks = 40
         click_count = 0
@@ -485,6 +491,90 @@ def scrape_category_products(brand, category):
             # Determine product type
             product_type = determine_product_type(model, category)
             
+            # Special handling for notebooks
+            if product_type == 'Notebook':
+                # Extract display size for color field
+                # Try to extract from URL first (more reliable)
+                # Find all numbers in URL and pick the one that looks like display size
+                all_numbers = re.findall(r'-(\d+)(?:\.?(\d+))?', prod_url)
+                display_str = 'n/n'
+                for whole, decimal in all_numbers:
+                    num_str = f"{whole}.{decimal}" if decimal else whole
+                    display_size = float(num_str)
+                    # Convert 3-digit numbers like 156 to 15.6, 140 to 14.0
+                    if display_size > 100:
+                        display_size = display_size / 10
+                        num_str = str(display_size)
+                    # Only use if it's a reasonable display size (10-20 inches)
+                    if 10 <= display_size <= 20:
+                        display_str = num_str.replace(',', '.') + '"'
+                        break
+                
+                color = display_str
+                
+                # Extract SSD storage from page (look for storage/capacità with larger values)
+                storage_selectors = [
+                    prod_soup.find('span', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('div', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('label', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('dt', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                ]
+                
+                ssd_found = False
+                for selector in storage_selectors:
+                    if selector:
+                        next_elem = selector.find_next_sibling()
+                        if next_elem:
+                            storage_text = next_elem.get_text(strip=True)
+                            # Look for larger storage values (typically 256GB, 512GB, 1TB for SSD)
+                            # Skip RAM values (usually 8GB, 16GB, 32GB)
+                            for match in re.finditer(r'(\d+)\s*(GB|TB)', storage_text, re.I):
+                                value = int(match.group(1))
+                                unit = match.group(2).upper()
+                                # If it's TB or large GB value (>64), it's likely SSD
+                                if unit == 'TB' or value > 64:
+                                    memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                                    ssd_found = True
+                                    break
+                            if ssd_found:
+                                break
+                
+                # Fallback: try to extract SSD from title
+                if not ssd_found:
+                    title_text = title.get_text() if title else ""
+                    ssd_match = re.search(r'(\d+)\s*(GB|TB)\s*SSD', title_text, re.I)
+                    if ssd_match:
+                        value = int(ssd_match.group(1))
+                        unit = ssd_match.group(2).upper()
+                        memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                    else:
+                        # Try to find any large storage value in title
+                        for match in re.finditer(r'(\d+)\s*(GB|TB)', title_text, re.I):
+                            value = int(match.group(1))
+                            unit = match.group(2).upper()
+                            if unit == 'TB' or value > 64:
+                                memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                                break
+                
+                # Clean model name for notebooks - remove NOTEBOOK, CHROMEBOOK, processore and processor codes
+                model = re.sub(r'\s+NOTEBOOK\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s+CHROMEBOOK\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s+CONVERTIBILE\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s*,\s*processore.*$', '', model, flags=re.I)
+                model = re.sub(r'\s+processore.*$', '', model, flags=re.I)
+                # Remove display size numbers from model name (like "14" in "GALAXY GO 14")
+                # Only remove 1-2 digit numbers (display sizes), not 3-digit numbers like 360 (model name part)
+                # Also protect known model name parts like 360
+                if '360' not in model:
+                    model = re.sub(r'\s+\d{1,2}\.?\d*\s*$', '', model, flags=re.I)
+                # Remove specific processor codes (like N4500, X1-26-100, 226V, 255U, 355, 356H)
+                # Be careful not to remove model name parts like "Book6"
+                model = re.sub(r'\s+N\d+[A-Z]*$', '', model, flags=re.I)  # Intel Celeron N4500
+                model = re.sub(r'\s+X\d+-\d+-\d+$', '', model, flags=re.I)  # Snapdragon X1-26-100
+                model = re.sub(r'\s+\d{3}[A-Z]$', '', model, flags=re.I)  # Intel Core 226V, 255U, 355, 356H
+                model = model.strip()
+            
+            
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
             
@@ -594,14 +684,18 @@ def scrape_with_filters(brand):
         # 4. APPLY MEDIAWORLD-ONLY FILTER
         try:
             print("Applying MediaWorld-only filter...")
-            mw_filter = driver.find_element(By.ID, "MediaWorld-marketplace")
-            if mw_filter and not mw_filter.is_selected():
-                driver.execute_script("arguments[0].click();", mw_filter)
-                print("✓ MediaWorld filter applied")
-                time.sleep(3)
+            # Navigate to URL with marketplace parameter instead of clicking
+            current_url = driver.current_url
+            if 'marketplace' not in current_url:
+                separator = '&' if '?' in current_url else '?'
+                filtered_url = f"{current_url}{separator}marketplace=MediaWorld"
+                driver.get(filtered_url)
+                print(f"✓ Navigated to filtered URL")
+                time.sleep(5)
+            else:
+                print("✓ Marketplace filter already in URL")
         except Exception as e:
             print(f"Could not apply MediaWorld filter: {e}")
-
         # 5. CLICK "Show more" BUTTON
         max_clicks = 40
         click_count = 0
@@ -744,6 +838,90 @@ def scrape_with_filters(brand):
             # Determine product type
             product_type = determine_product_type(model, category)
             
+            # Special handling for notebooks
+            if product_type == 'Notebook':
+                # Extract display size for color field
+                # Try to extract from URL first (more reliable)
+                # Find all numbers in URL and pick the one that looks like display size
+                all_numbers = re.findall(r'-(\d+)(?:\.?(\d+))?', prod_url)
+                display_str = 'n/n'
+                for whole, decimal in all_numbers:
+                    num_str = f"{whole}.{decimal}" if decimal else whole
+                    display_size = float(num_str)
+                    # Convert 3-digit numbers like 156 to 15.6, 140 to 14.0
+                    if display_size > 100:
+                        display_size = display_size / 10
+                        num_str = str(display_size)
+                    # Only use if it's a reasonable display size (10-20 inches)
+                    if 10 <= display_size <= 20:
+                        display_str = num_str.replace(',', '.') + '"'
+                        break
+                
+                color = display_str
+                
+                # Extract SSD storage from page (look for storage/capacità with larger values)
+                storage_selectors = [
+                    prod_soup.find('span', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('div', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('label', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('dt', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                ]
+                
+                ssd_found = False
+                for selector in storage_selectors:
+                    if selector:
+                        next_elem = selector.find_next_sibling()
+                        if next_elem:
+                            storage_text = next_elem.get_text(strip=True)
+                            # Look for larger storage values (typically 256GB, 512GB, 1TB for SSD)
+                            # Skip RAM values (usually 8GB, 16GB, 32GB)
+                            for match in re.finditer(r'(\d+)\s*(GB|TB)', storage_text, re.I):
+                                value = int(match.group(1))
+                                unit = match.group(2).upper()
+                                # If it's TB or large GB value (>64), it's likely SSD
+                                if unit == 'TB' or value > 64:
+                                    memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                                    ssd_found = True
+                                    break
+                            if ssd_found:
+                                break
+                
+                # Fallback: try to extract SSD from title
+                if not ssd_found:
+                    title_text = title.get_text() if title else ""
+                    ssd_match = re.search(r'(\d+)\s*(GB|TB)\s*SSD', title_text, re.I)
+                    if ssd_match:
+                        value = int(ssd_match.group(1))
+                        unit = ssd_match.group(2).upper()
+                        memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                    else:
+                        # Try to find any large storage value in title
+                        for match in re.finditer(r'(\d+)\s*(GB|TB)', title_text, re.I):
+                            value = int(match.group(1))
+                            unit = match.group(2).upper()
+                            if unit == 'TB' or value > 64:
+                                memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                                break
+                
+                # Clean model name for notebooks - remove NOTEBOOK, CHROMEBOOK, processore and processor codes
+                model = re.sub(r'\s+NOTEBOOK\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s+CHROMEBOOK\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s+CONVERTIBILE\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s*,\s*processore.*$', '', model, flags=re.I)
+                model = re.sub(r'\s+processore.*$', '', model, flags=re.I)
+                # Remove display size numbers from model name (like "14" in "GALAXY GO 14")
+                # Only remove 1-2 digit numbers (display sizes), not 3-digit numbers like 360 (model name part)
+                # Also protect known model name parts like 360
+                if '360' not in model:
+                    model = re.sub(r'\s+\d{1,2}\.?\d*\s*$', '', model, flags=re.I)
+                # Remove specific processor codes (like N4500, X1-26-100, 226V, 255U, 355, 356H)
+                # Be careful not to remove model name parts like "Book6"
+                model = re.sub(r'\s+N\d+[A-Z]*$', '', model, flags=re.I)  # Intel Celeron N4500
+                model = re.sub(r'\s+X\d+-\d+-\d+$', '', model, flags=re.I)  # Snapdragon X1-26-100
+                model = re.sub(r'\s+\d{3}[A-Z]$', '', model, flags=re.I)  # Intel Core 226V, 255U, 355, 356H
+                model = model.strip()
+            
+            
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
             
             products.append({
@@ -809,11 +987,16 @@ def scrape_brand_only(brand):
         # Apply MediaWorld-only filter to exclude marketplace
         try:
             print("Applying MediaWorld-only filter...")
-            mw_filter = driver.find_element(By.ID, "MediaWorld-marketplace")
-            if mw_filter and not mw_filter.is_selected():
-                driver.execute_script("arguments[0].click();", mw_filter)
-                print("✓ MediaWorld filter applied")
-                time.sleep(3)  # Wait for filter to apply
+            # Click the label instead of the hidden input
+            mw_label = driver.find_element(By.XPATH, "//label[contains(., 'MediaWorld') and not(contains(., 'CONSIGLIA'))]")
+            if mw_label:
+                input_elem = mw_label.find_element(By.TAG_NAME, "input")
+                if not input_elem.is_selected():
+                    driver.execute_script("arguments[0].click();", mw_label)
+                    print("✓ MediaWorld filter applied")
+                    time.sleep(3)  # Wait for filter to apply
+                else:
+                    print("✓ MediaWorld filter already selected")
         except Exception as e:
             print(f"Could not apply MediaWorld filter: {e}")
 
@@ -1022,6 +1205,90 @@ def scrape_brand_only(brand):
             # Determine product type
             product_type = determine_product_type(model, category)
             
+            # Special handling for notebooks
+            if product_type == 'Notebook':
+                # Extract display size for color field
+                # Try to extract from URL first (more reliable)
+                # Find all numbers in URL and pick the one that looks like display size
+                all_numbers = re.findall(r'-(\d+)(?:\.?(\d+))?', prod_url)
+                display_str = 'n/n'
+                for whole, decimal in all_numbers:
+                    num_str = f"{whole}.{decimal}" if decimal else whole
+                    display_size = float(num_str)
+                    # Convert 3-digit numbers like 156 to 15.6, 140 to 14.0
+                    if display_size > 100:
+                        display_size = display_size / 10
+                        num_str = str(display_size)
+                    # Only use if it's a reasonable display size (10-20 inches)
+                    if 10 <= display_size <= 20:
+                        display_str = num_str.replace(',', '.') + '"'
+                        break
+                
+                color = display_str
+                
+                # Extract SSD storage from page (look for storage/capacità with larger values)
+                storage_selectors = [
+                    prod_soup.find('span', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('div', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('label', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                    prod_soup.find('dt', string=re.compile(r"Memoria|Storage|Capacità|SSD", re.I)),
+                ]
+                
+                ssd_found = False
+                for selector in storage_selectors:
+                    if selector:
+                        next_elem = selector.find_next_sibling()
+                        if next_elem:
+                            storage_text = next_elem.get_text(strip=True)
+                            # Look for larger storage values (typically 256GB, 512GB, 1TB for SSD)
+                            # Skip RAM values (usually 8GB, 16GB, 32GB)
+                            for match in re.finditer(r'(\d+)\s*(GB|TB)', storage_text, re.I):
+                                value = int(match.group(1))
+                                unit = match.group(2).upper()
+                                # If it's TB or large GB value (>64), it's likely SSD
+                                if unit == 'TB' or value > 64:
+                                    memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                                    ssd_found = True
+                                    break
+                            if ssd_found:
+                                break
+                
+                # Fallback: try to extract SSD from title
+                if not ssd_found:
+                    title_text = title.get_text() if title else ""
+                    ssd_match = re.search(r'(\d+)\s*(GB|TB)\s*SSD', title_text, re.I)
+                    if ssd_match:
+                        value = int(ssd_match.group(1))
+                        unit = ssd_match.group(2).upper()
+                        memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                    else:
+                        # Try to find any large storage value in title
+                        for match in re.finditer(r'(\d+)\s*(GB|TB)', title_text, re.I):
+                            value = int(match.group(1))
+                            unit = match.group(2).upper()
+                            if unit == 'TB' or value > 64:
+                                memory = f"{value * 1000 if unit == 'TB' else value} GB"
+                                break
+                
+                # Clean model name for notebooks - remove NOTEBOOK, CHROMEBOOK, processore and processor codes
+                model = re.sub(r'\s+NOTEBOOK\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s+CHROMEBOOK\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s+CONVERTIBILE\s*', ' ', model, flags=re.I)
+                model = re.sub(r'\s*,\s*processore.*$', '', model, flags=re.I)
+                model = re.sub(r'\s+processore.*$', '', model, flags=re.I)
+                # Remove display size numbers from model name (like "14" in "GALAXY GO 14")
+                # Only remove 1-2 digit numbers (display sizes), not 3-digit numbers like 360 (model name part)
+                # Also protect known model name parts like 360
+                if '360' not in model:
+                    model = re.sub(r'\s+\d{1,2}\.?\d*\s*$', '', model, flags=re.I)
+                # Remove specific processor codes (like N4500, X1-26-100, 226V, 255U, 355, 356H)
+                # Be careful not to remove model name parts like "Book6"
+                model = re.sub(r'\s+N\d+[A-Z]*$', '', model, flags=re.I)  # Intel Celeron N4500
+                model = re.sub(r'\s+X\d+-\d+-\d+$', '', model, flags=re.I)  # Snapdragon X1-26-100
+                model = re.sub(r'\s+\d{3}[A-Z]$', '', model, flags=re.I)  # Intel Core 226V, 255U, 355, 356H
+                model = model.strip()
+            
+            
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
             
@@ -1163,11 +1430,13 @@ def main():
         all_products.sort(key=lambda x: x['Modello'])
         
         output_file = "mediaworld_products.csv"
-        with open(output_file, "w", newline='', encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["Marca", "Tipo", "Modello", "Memoria", "Colore", "Codice_PIM"])
-            writer.writeheader()
+        with open(output_file, "w", encoding="utf-8") as f:
+            # Write header
+            f.write("Marca,Tipo,Modello,Memoria,Colore,Codice_PIM\n")
+            # Write each product manually to avoid CSV quoting
             for product in all_products:
-                writer.writerow(product)
+                line = f"{product['Marca']},{product['Tipo']},{product['Modello']},{product['Memoria']},{product['Colore']},{product['Codice_PIM']}\n"
+                f.write(line)
         
         print(f"\n{'='*60}")
         print(f"Scraping complete!")

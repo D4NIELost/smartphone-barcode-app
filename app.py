@@ -10,7 +10,7 @@ import os
 # PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
 PASSWORD = None  # Set to None to disable password authentication
 CSV_FILE = "database_telefoni.csv"
-APP_VERSION = "1.0"  # Version to verify deployment
+APP_VERSION = "1.1"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -279,7 +279,8 @@ def show_categories_view(df):
     category_emojis = {
         'Smartphone': '📱',
         'Smartwatch': '⌚',
-        'Tablet': '📱'
+        'Tablet': '📱',
+        'Notebook': '💻'
     }
     
     # Display category buttons
