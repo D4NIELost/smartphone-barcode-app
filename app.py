@@ -7,13 +7,14 @@ from PIL import Image
 import os
 
 # Configuration
-PASSWORD = "negozio2026"  # Change this to your desired password
+# PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
+PASSWORD = None  # Set to None to disable password authentication
 CSV_FILE = "database_telefoni.csv"
-APP_VERSION = "1.2"  # Version to verify deployment
+APP_VERSION = "1.3"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
+    st.session_state.authenticated = PASSWORD is None  # Auto-authenticate if password is disabled
 if 'selected_brand' not in st.session_state:
     st.session_state.selected_brand = None
 if 'selected_category' not in st.session_state:
