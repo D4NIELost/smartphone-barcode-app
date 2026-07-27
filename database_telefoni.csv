@@ -2,6 +2,7 @@ Marca,Tipo,Modello,Memoria,Colore,Codice_PIM
 Samsung,Smartphone,Galaxy A16,128GB,Black,411110
 Samsung,Smartphone,Galaxy A16,128GB,Gray,411118
 Samsung,Smartphone,Galaxy A16,128GB,Light Green,411112
+Samsung,Smartphone,Galaxy A16,128GB,Black Blue,431292
 Samsung,Smartphone,Galaxy A27 5G,128GB,Black,586061
 Samsung,Smartphone,Galaxy A27 5G,128GB,BLUE,586074
 Samsung,Smartphone,Galaxy A27 5G,128GB,PINK,586072
@@ -87,9 +88,6 @@ Samsung,Smartphone,Galaxy Z Fold8 Ultra,512GB,Violet Shadow,593086
 Samsung,Smartwatch,Galaxy FIT3,n/n,Gray,397306
 Samsung,Smartwatch,Galaxy FIT3,n/n,Silver,397315
 Samsung,Smartwatch,Galaxy FIT3,n/n,Pink Gold,397316
-Samsung,Smartwatch,Galaxy Watch Ultra 4G,47 mm,Titanium Gray,456465
-Samsung,Smartwatch,Galaxy Watch Ultra2,n/n,Titanium Gray,594364
-Samsung,Smartwatch,Galaxy Watch Ultra2,n/n,Titanium Silver,594370
 Samsung,Smartwatch,Galaxy Watch8,40 mm,Graphite,456261
 Samsung,Smartwatch,Galaxy Watch8,44 mm,Graphite,456351
 Samsung,Smartwatch,Galaxy Watch8,44 mm,Silver,456298
@@ -98,6 +96,9 @@ Samsung,Smartwatch,Galaxy Watch9,40 mm,Graphite,594376
 Samsung,Smartwatch,Galaxy Watch9,40 mm,Cream,594375
 Samsung,Smartwatch,Galaxy Watch9,44 mm,Graphite,594378
 Samsung,Smartwatch,Galaxy Watch9,44 mm,Silver,594377
+Samsung,Smartwatch,Galaxy Watch Ultra 4G,47 mm,Titanium Gray,456465
+Samsung,Smartwatch,Galaxy Watch Ultra2,n/n,Titanium Gray,594364
+Samsung,Smartwatch,Galaxy Watch Ultra2,n/n,Titanium Silver,594370
 Samsung,Tablet,GALAXY TAB A11 WIFI,64GB,n/n,577429
 Samsung,Tablet,GALAXY TAB A11+,128GB,n/n,551789
 Samsung,Tablet,GALAXY TAB A11+,256GB,n/n,551780
