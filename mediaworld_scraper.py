@@ -463,17 +463,13 @@ def scrape_category_products(brand, category):
             model = model.strip()
             
             # Remove color from model name (color should be in separate field only)
-            # Simple approach: remove everything after the last comma (colors are always comma-separated at the end)
-            model = re.sub(r',\s*[^,]+$', '', model, flags=re.I)
-            model = model.strip()
+            # Simple approach: split by comma and take only the first part
+            if ',' in model:
+                model = model.split(',')[0].strip()
             
             # Also remove any remaining single-word colors at the end
             single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
             model = re.sub(single_color_pattern, '', model, flags=re.I)
-            model = model.strip()
-            
-            model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after color removal
-            model = re.sub(r',\s*,\s*', ', ', model)  # Fix double commas
             model = model.strip()
             
             color = extract_color(prod_soup, prod_url)
@@ -1243,17 +1239,13 @@ def scrape_brand_only(brand):
             model = model.strip()
             
             # Remove color from model name (color should be in separate field only)
-            # Simple approach: remove everything after the last comma (colors are always comma-separated at the end)
-            model = re.sub(r',\s*[^,]+$', '', model, flags=re.I)
-            model = model.strip()
+            # Simple approach: split by comma and take only the first part
+            if ',' in model:
+                model = model.split(',')[0].strip()
             
             # Also remove any remaining single-word colors at the end
             single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
             model = re.sub(single_color_pattern, '', model, flags=re.I)
-            model = model.strip()
-            
-            model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after color removal
-            model = re.sub(r',\s*,\s*', ', ', model)  # Fix double commas
             model = model.strip()
             
             color = extract_color(prod_soup, prod_url)

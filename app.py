@@ -956,10 +956,13 @@ def main():
             justify-content: center;
         }
         </style>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='white'/%3E%3Crect x='10' y='25' width='8' height='50' fill='black'/%3E%3Crect x='22' y='25' width='8' height='50' fill='%231f77b4'/%3E%3Crect x='34' y='25' width='8' height='50' fill='%23ff7f0e'/%3E%3Crect x='46' y='25' width='8' height='50' fill='%232ca02c'/%3E%3Crect x='58' y='25' width='8' height='50' fill='black'/%3E%3Crect x='70' y='25' width='8' height='50' fill='%231f77b4'/%3E%3Crect x='82' y='25' width='8' height='50' fill='%23ff7f0e'/%3E%3Crect x='0' y='0' width='100' height='100' fill='none' stroke='%231f77b4' stroke-width='4'/%3E%3C/svg%3E">
-        <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='white'/%3E%3Crect x='10' y='25' width='8' height='50' fill='black'/%3E%3Crect x='22' y='25' width='8' height='50' fill='%231f77b4'/%3E%3Crect x='34' y='25' width='8' height='50' fill='%23ff7f0e'/%3E%3Crect x='46' y='25' width='8' height='50' fill='%232ca02c'/%3E%3Crect x='58' y='25' width='8' height='50' fill='black'/%3E%3Crect x='70' y='25' width='8' height='50' fill='%231f77b4'/%3E%3Crect x='82' y='25' width='8' height='50' fill='%23ff7f0e'/%3E%3Crect x='0' y='0' width='100' height='100' fill='none' stroke='%231f77b4' stroke-width='4'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/png" href="/static/app-icon.png">
+        <link rel="apple-touch-icon" sizes="192x192" href="/static/app-icon.png">
+        <link rel="apple-touch-icon" sizes="512x512" href="/static/app-icon-large.png">
+        <link rel="manifest" href="/static/manifest.json">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="theme-color" content="#1f77b4">
     """, unsafe_allow_html=True)
     
     # Route based on authentication
