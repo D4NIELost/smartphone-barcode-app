@@ -463,33 +463,14 @@ def scrape_category_products(brand, category):
             model = model.strip()
             
             # Remove color from model name (color should be in separate field only)
-            # Common color names to remove from end of model name (English and Italian)
-            color_patterns = [
-                r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$',
-                r',\s*(Light\s+\w+|Dark\s+\w+|Awesome\s+\w+|Stellar\s+\w+|Lunar\s+\w+|Sky\s+\w+|Titanium\s+\w+|Violet\s+\w+)\s*$',
-                r',\s*(Cobalt\s+Violet|Jet\s+Black|Light\s+Green|Awesome\s+Navy|Silver\s+Blue|White\s+Silver|Titanium\s+Gray|Titanium\s+Silverblue|Titanium\s+Whitesilver)\s*$',
-                r',\s*(Canyon\s+Orange|Tundra\s+Umber|Aurora\s+White|Aurora\s+Blue|Twilight\s+Black|Dusk\s+Black|Titanium\s+Charcoal)\s*$',
-                r',\s*(Silver\s+Shadow|Black/Blue|Black/White|Blue/Black|White/Black)\s*$',
-                # Motorola specific colors
-                r',\s*(Bronze\s+Green|Lily\s+Pad|Denim\s+Blue|Forest\s+Green|Arabesque|Scarab)\s*$',
-                r',\s*(MIDNIGHT\s+BLUE)\s*$',
-                # Italian color patterns
-                r',\s*(Nero|Bianco|Blu|Verde|Rosso|Giallo|Arancione|Viola|Rosa|Grigio|Argento|Oro|Marrone|Beige|Crema|Avorio|Lavanda|Navy|Cobalto|Titanio|Ossidiana|Carbone|Naturale|Profondo|Ghiaccio|Graphite|Menta)\s*$',
-                r',\s*(Nero\s+ossidiana|Viola\s+lavanda|Bianco\s+argento|Nero\s+jet|Verde\s+chiaro|Blu\s+cobalto|Grigio\s+titanio)\s*$'
-            ]
+            # Simple approach: remove everything after the last comma (colors are always comma-separated at the end)
+            model = re.sub(r',\s*[^,]+$', '', model, flags=re.I)
+            model = model.strip()
             
-            # Also remove colors from middle of model name (for cases like "Galaxy S25, Icyblue")
-            middle_color_patterns = [
-                r',\s*(Jetblack|Icyblue|Silver\s+Shadow|Black/Blue)\s*,',
-                r',\s*(Jetblack|Icyblue|Silver\s+Shadow|Black/Blue)\s*$'
-            ]
-            
-            for pattern in color_patterns:
-                model = re.sub(pattern, '', model, flags=re.I)
-            
-            # Apply middle color patterns
-            for pattern in middle_color_patterns:
-                model = re.sub(pattern, ',', model, flags=re.I)
+            # Also remove any remaining single-word colors at the end
+            single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
+            model = re.sub(single_color_pattern, '', model, flags=re.I)
+            model = model.strip()
             
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after color removal
             model = re.sub(r',\s*,\s*', ', ', model)  # Fix double commas
@@ -1262,33 +1243,14 @@ def scrape_brand_only(brand):
             model = model.strip()
             
             # Remove color from model name (color should be in separate field only)
-            # Common color names to remove from end of model name (English and Italian)
-            color_patterns = [
-                r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$',
-                r',\s*(Light\s+\w+|Dark\s+\w+|Awesome\s+\w+|Stellar\s+\w+|Lunar\s+\w+|Sky\s+\w+|Titanium\s+\w+|Violet\s+\w+)\s*$',
-                r',\s*(Cobalt\s+Violet|Jet\s+Black|Light\s+Green|Awesome\s+Navy|Silver\s+Blue|White\s+Silver|Titanium\s+Gray|Titanium\s+Silverblue|Titanium\s+Whitesilver)\s*$',
-                r',\s*(Canyon\s+Orange|Tundra\s+Umber|Aurora\s+White|Aurora\s+Blue|Twilight\s+Black|Dusk\s+Black|Titanium\s+Charcoal)\s*$',
-                r',\s*(Silver\s+Shadow|Black/Blue|Black/White|Blue/Black|White/Black)\s*$',
-                # Motorola specific colors
-                r',\s*(Bronze\s+Green|Lily\s+Pad|Denim\s+Blue|Forest\s+Green|Arabesque|Scarab)\s*$',
-                r',\s*(MIDNIGHT\s+BLUE)\s*$',
-                # Italian color patterns
-                r',\s*(Nero|Bianco|Blu|Verde|Rosso|Giallo|Arancione|Viola|Rosa|Grigio|Argento|Oro|Marrone|Beige|Crema|Avorio|Lavanda|Navy|Cobalto|Titanio|Ossidiana|Carbone|Naturale|Profondo|Ghiaccio|Graphite|Menta)\s*$',
-                r',\s*(Nero\s+ossidiana|Viola\s+lavanda|Bianco\s+argento|Nero\s+jet|Verde\s+chiaro|Blu\s+cobalto|Grigio\s+titanio)\s*$'
-            ]
+            # Simple approach: remove everything after the last comma (colors are always comma-separated at the end)
+            model = re.sub(r',\s*[^,]+$', '', model, flags=re.I)
+            model = model.strip()
             
-            # Also remove colors from middle of model name (for cases like "Galaxy S25, Icyblue")
-            middle_color_patterns = [
-                r',\s*(Jetblack|Icyblue|Silver\s+Shadow|Black/Blue)\s*,',
-                r',\s*(Jetblack|Icyblue|Silver\s+Shadow|Black/Blue)\s*$'
-            ]
-            
-            for pattern in color_patterns:
-                model = re.sub(pattern, '', model, flags=re.I)
-            
-            # Apply middle color patterns
-            for pattern in middle_color_patterns:
-                model = re.sub(pattern, ',', model, flags=re.I)
+            # Also remove any remaining single-word colors at the end
+            single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
+            model = re.sub(single_color_pattern, '', model, flags=re.I)
+            model = model.strip()
             
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after color removal
             model = re.sub(r',\s*,\s*', ', ', model)  # Fix double commas

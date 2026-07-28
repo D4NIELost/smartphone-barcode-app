@@ -937,7 +937,7 @@ def main():
         initial_sidebar_state="collapsed"
     )
     
-    # Custom CSS for mobile optimization
+    # Custom CSS for mobile optimization and favicon
     st.markdown("""
         <style>
         .stApp {
@@ -956,6 +956,11 @@ def main():
             justify-content: center;
         }
         </style>
+        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+        <link rel="apple-touch-icon" sizes="192x192" href="/static/icon-192.png">
+        <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
     """, unsafe_allow_html=True)
     
     # Route based on authentication
