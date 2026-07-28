@@ -1,0 +1,35 @@
+Categoria,Sottocategoria,Servizio,Codice,Costo
+Servizi Generali,Computer,PC READY,748372,29.99
+Servizi Generali,Computer,PRIMO AVVIO,433214,19.99
+Servizi Generali,Computer,CALIBRAZIONE NOTEBOOK,421563,29.99
+Servizi Generali,Computer,RTU + Calibrazione,595964,39.99
+Servizi Generali,Smartphone,PRIMO AVVIO,215393,19.99
+Servizi Generali,Smartphone,AVVIO SMARTWATCH,215393,19.99
+Servizi Generali,Smartphone,TRASFERIMENTO DATI FINO A 16 GB,215379,19.99
+Servizi Generali,Smartphone,TRASFERIMENTO DATI FINO A 64 GB,215384,29.99
+Servizi Generali,Smartphone,TRASFERIMENTO DATI FINO A 128 GB,215385,39.99
+Servizi Generali,Smartphone,TRASFERIMENTO DATI FINO A 256 GB,215390,49.99
+Servizi Generali,Smartphone,TRASFERIMENTO DATI OLTRE 256 GB,425292,69.99
+Servizi Generali,Smartphone,MARCA DA BOLLO,993304,2.00
+
+Pellicole e protezioni,Smartphone,LITE (NON USARE),578685,19.99
+Pellicole e protezioni,Smartphone,PRO (NON USARE),578678,24.99
+Pellicole e protezioni,Smartphone,ULTRA,578681,28.99
+Pellicole e protezioni,Smartphone,MATTE,578679,29.99
+Pellicole e protezioni,Smartphone,ANTISPY,578682,32.99
+Pellicole e protezioni,Smartphone,TETRA,578683,34.99
+Pellicole e protezioni,Smartphone,HYBRID,578684,39.99
+Pellicole e protezioni,Smartphone,HYBRID MATT,580107,44.99
+Pellicole e protezioni,Smartphone,HYBRID MATT ANTISPY,580103,44.99
+Pellicole e protezioni,Smartwatch,PRO 4",578676,16.99
+Pellicole e protezioni,Tablet,TAB fino a 11",580741,29.99
+Pellicole e protezioni,Tablet,TAB fino a 13",580743,34.99
+Pellicole e protezioni,Tablet,TAB fino a 16",580745,44.99
+Pellicole e protezioni,Tablet,MATTE fino a 13",580747,49.99
+Pellicole e protezioni,Altro,BACKSKIN,346488,24.99
+Pellicole e protezioni,Altro,COVER 3D,563214,16.99
+
+Software,Software,Office Home 2024,393704,149.99
+Software,Software,INST. SOFT.,706449,14.99
+Software,Software,McAfee LiveSafe,446946,19.99
+Software,Software,INST. McAfee,362740,5.99

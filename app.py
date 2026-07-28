@@ -10,11 +10,14 @@ import os
 # PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
 PASSWORD = None  # Set to None to disable password authentication
 CSV_FILE = "database_telefoni.csv"
-APP_VERSION = "1.1"  # Version to verify deployment
+SERVICES_CSV_FILE = "database_servizi.csv"
+APP_VERSION = "1.2"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = PASSWORD is None  # Auto-authenticate if password is disabled
+if 'current_section' not in st.session_state:
+    st.session_state.current_section = 'phones'  # 'phones' or 'services'
 if 'selected_brand' not in st.session_state:
     st.session_state.selected_brand = None
 if 'selected_category' not in st.session_state:
@@ -29,6 +32,13 @@ if 'model_has_single_memory' not in st.session_state:
     st.session_state.model_has_single_memory = False
 if 'skipped_color_selection' not in st.session_state:
     st.session_state.skipped_color_selection = False
+# Services section state
+if 'services_category' not in st.session_state:
+    st.session_state.services_category = None
+if 'services_subcategory' not in st.session_state:
+    st.session_state.services_subcategory = None
+if 'selected_service' not in st.session_state:
+    st.session_state.selected_service = None
 
 def load_database():
     """Load phone database from CSV file"""
@@ -48,6 +58,24 @@ def load_database():
             return None
     except Exception as e:
         st.error(f"Errore nel caricamento del database: {e}")
+        return None
+
+def load_services_database():
+    """Load services database from CSV file"""
+    try:
+        if os.path.exists(SERVICES_CSV_FILE):
+            df = pd.read_csv(SERVICES_CSV_FILE, dtype={'Codice': str})
+            required_columns = ['Categoria', 'Sottocategoria', 'Servizio', 'Codice', 'Costo']
+            for col in required_columns:
+                if col not in df.columns:
+                    st.error(f"Colonna mancante nel CSV servizi: {col}")
+                    return None
+            return df
+        else:
+            st.error(f"File {SERVICES_CSV_FILE} non trovato")
+            return None
+    except Exception as e:
+        st.error(f"Errore nel caricamento del database servizi: {e}")
         return None
 
 def resize_and_crop(img, target_width, target_height):
@@ -133,10 +161,93 @@ def login_page():
 
 def main_app():
     """Display main application"""
+    # Section selector
     st.title("📱 Catalogo Dispositivi")
     st.caption(f"Versione: {APP_VERSION}")
     st.markdown("---")
     
+    # CSS for active button highlighting
+    if st.session_state.current_section == 'phones':
+        st.markdown("""
+            <style>
+            div[data-testid="stButton"] > button[kind="primary"] {
+                background-color: #1f77b4 !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+    elif st.session_state.current_section == 'services':
+        st.markdown("""
+            <style>
+            div[data-testid="stButton"] > button[kind="primary"] {
+                background-color: #1f77b4 !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.session_state.current_section == 'phones':
+            if st.button("📱 Telefoni", key="nav_phones", type="primary", width='stretch', use_container_width=True):
+                st.session_state.current_section = 'phones'
+                st.rerun()
+        else:
+            if st.button("📱 Telefoni", key="nav_phones", width='stretch', use_container_width=True):
+                st.session_state.current_section = 'phones'
+                st.rerun()
+    with col2:
+        if st.session_state.current_section == 'services':
+            if st.button("🔧 Servizi e Software", key="nav_services", type="primary", width='stretch', use_container_width=True):
+                st.session_state.current_section = 'services'
+                st.rerun()
+        else:
+            if st.button("🔧 Servizi e Software", key="nav_services", width='stretch', use_container_width=True):
+                st.session_state.current_section = 'services'
+                st.rerun()
+    
+    st.markdown("---")
+    
+    # Route to appropriate section
+    if st.session_state.current_section == 'services':
+        services_app()
+    else:
+        phones_app()
+    
+    st.markdown("---")
+    
+    # Back button, Home and Logout
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("⬅️ Indietro", width='stretch'):
+            if st.session_state.current_section == 'services':
+                go_back_services()
+            else:
+                go_back()
+    with col2:
+        if st.button("🏠 Home", width='stretch'):
+            reset_all_state()
+            st.rerun()
+    with col3:
+        if st.button("🚪 Logout", width='stretch'):
+            st.session_state.authenticated = False
+            reset_all_state()
+            st.rerun()
+
+def reset_all_state():
+    """Reset all session state variables"""
+    st.session_state.current_section = 'phones'
+    st.session_state.selected_brand = None
+    st.session_state.selected_category = None
+    st.session_state.selected_model = None
+    st.session_state.selected_memory = None
+    st.session_state.selected_variant = None
+    st.session_state.model_has_single_memory = False
+    st.session_state.skipped_color_selection = False
+    st.session_state.services_category = None
+    st.session_state.services_subcategory = None
+    st.session_state.selected_service = None
+
+def phones_app():
+    """Display phones section"""
     # Load database
     df = load_database()
     
@@ -163,35 +274,29 @@ def main_app():
     else:
         # Show brands
         show_brands_view(df)
+
+def services_app():
+    """Display services section"""
+    # Load services database
+    df = load_services_database()
     
-    st.markdown("---")
+    if df is None:
+        st.warning("Impossibile caricare il database servizi. Assicurati che il file CSV esista.")
+        return
     
-    # Back button, Home and Logout
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("⬅️ Indietro", width='stretch'):
-            go_back()
-    with col2:
-        if st.button("🏠 Home", width='stretch'):
-            st.session_state.selected_brand = None
-            st.session_state.selected_category = None
-            st.session_state.selected_model = None
-            st.session_state.selected_memory = None
-            st.session_state.selected_variant = None
-            st.session_state.model_has_single_memory = False
-            st.session_state.skipped_color_selection = False
-            st.rerun()
-    with col3:
-        if st.button("🚪 Logout", width='stretch'):
-            st.session_state.authenticated = False
-            st.session_state.selected_brand = None
-            st.session_state.selected_category = None
-            st.session_state.selected_model = None
-            st.session_state.selected_memory = None
-            st.session_state.selected_variant = None
-            st.session_state.model_has_single_memory = False
-            st.session_state.skipped_color_selection = False
-            st.rerun()
+    # Navigation logic
+    if st.session_state.selected_service:
+        # Show final view with barcode
+        show_service_view(df)
+    elif st.session_state.services_subcategory:
+        # Show services for selected subcategory
+        show_services_view(df)
+    elif st.session_state.services_category:
+        # Show subcategories for selected category
+        show_subcategories_view(df)
+    else:
+        # Show categories
+        show_services_categories_view(df)
 
 def go_back():
     """Navigate back in the hierarchy"""
@@ -221,6 +326,31 @@ def go_back():
     elif st.session_state.selected_brand:
         st.session_state.selected_brand = None
         st.session_state.model_has_single_memory = False
+    st.rerun()
+
+def go_back_services():
+    """Navigate back in the services hierarchy"""
+    if st.session_state.selected_service:
+        st.session_state.selected_service = None
+    elif st.session_state.services_subcategory:
+        # Check if the category has only one subcategory (like Software)
+        # If so, skip subcategory view and go directly to category selection
+        df = load_services_database()
+        if df is not None and st.session_state.services_category:
+            category_df = df[df['Categoria'] == st.session_state.services_category]
+            subcategories = category_df['Sottocategoria'].drop_duplicates()
+            subcategories = [s for s in subcategories if pd.notna(s) and s != '']
+            if len(subcategories) == 1:
+                # Only one subcategory, skip to category selection
+                st.session_state.services_subcategory = None
+                st.session_state.services_category = None
+            else:
+                # Multiple subcategories, go back to subcategory view
+                st.session_state.services_subcategory = None
+        else:
+            st.session_state.services_subcategory = None
+    elif st.session_state.services_category:
+        st.session_state.services_category = None
     st.rerun()
 
 def show_brands_view(df):
@@ -543,6 +673,100 @@ def show_variant_view(df):
     with col2:
         # Generate and display barcode
         barcode_img = generate_barcode(str(variant['Codice_PIM']))
+        
+        if barcode_img is not None:
+            st.image(barcode_img, width=400)
+            st.success("Codice a barre generato con successo!")
+
+def show_services_categories_view(df):
+    """Display service categories"""
+    st.subheader("Seleziona Categoria")
+    
+    categories = df['Categoria'].unique()
+    
+    # Category emojis
+    category_emojis = {
+        'Servizi Generali': '🔧',
+        'Pellicole e protezioni': '🛡️',
+        'Software': '💿'
+    }
+    
+    # Linear view for mobile
+    for idx, category in enumerate(categories):
+        emoji = category_emojis.get(category, '📋')
+        if st.button(f"{emoji} {category}", key=f"serv_cat_{idx}", width='stretch'):
+            st.session_state.services_category = category
+            st.rerun()
+
+def show_subcategories_view(df):
+    """Display subcategories for selected category"""
+    category = st.session_state.services_category
+    st.subheader(f"{category} - Seleziona Sottocategoria")
+    
+    # Filter by category
+    category_df = df[df['Categoria'] == category]
+    
+    # Get subcategories preserving database order
+    subcategories = category_df['Sottocategoria'].drop_duplicates()
+    subcategories = [s for s in subcategories if pd.notna(s) and s != '']
+    
+    # If only one subcategory, skip to services
+    if len(subcategories) == 1:
+        st.session_state.services_subcategory = subcategories[0]
+        st.rerun()
+        return
+    
+    # Subcategory emojis
+    subcategory_emojis = {
+        'Computer': '💻',
+        'Smartphone': '📱',
+        'Smartwatch': '⌚',
+        'Tablet': '📱',
+        'Altro': '📦'
+    }
+    
+    # Linear view for mobile
+    for idx, subcategory in enumerate(subcategories):
+        emoji = subcategory_emojis.get(subcategory, '📋')
+        if st.button(f"{emoji} {subcategory}", key=f"subcat_{idx}", width='stretch'):
+            st.session_state.services_subcategory = subcategory
+            st.rerun()
+
+def show_services_view(df):
+    """Display services for selected subcategory"""
+    category = st.session_state.services_category
+    subcategory = st.session_state.services_subcategory
+    st.subheader(f"{category} - {subcategory}")
+    
+    # Filter by category and subcategory
+    filtered_df = df[(df['Categoria'] == category) & (df['Sottocategoria'] == subcategory)]
+    
+    # Linear view for mobile - preserves database order
+    for idx, row in filtered_df.iterrows():
+        service_name = row['Servizio']
+        cost = row['Costo']
+        if st.button(f"{service_name}\n€{cost}", key=f"service_{idx}", width='stretch'):
+            st.session_state.selected_service = row.to_dict()
+            st.rerun()
+
+def show_service_view(df):
+    """Display final view with service code and barcode"""
+    service = st.session_state.selected_service
+    
+    st.subheader(f"{service['Categoria']} - {service['Servizio']}")
+    st.markdown("---")
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.write(f"**Sottocategoria:** {service['Sottocategoria']}")
+        st.write(f"**Servizio:** {service['Servizio']}")
+        st.write(f"**Costo:** €{service['Costo']}")
+        st.write(f"**Codice:** {service['Codice']}")
+    
+    with col2:
+        # Generate and display barcode
+        barcode_img = generate_barcode(str(service['Codice']))
         
         if barcode_img is not None:
             st.image(barcode_img, width=400)
