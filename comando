@@ -1,1 +1,3 @@
 .venv/bin/streamlit run app.py
+
+mediaworld_scraper.py --import

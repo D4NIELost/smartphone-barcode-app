@@ -431,6 +431,14 @@ def scrape_category_products(brand, category):
             model = re.sub(r'^\s*,\s*', '', model)  # Remove leading comma
             model = model.strip()
             
+            # Extract color from model name as fallback before removing it
+            color_from_model = extract_color_from_model(model)
+            
+            # Extract PANTONE colors specifically before removing them
+            pantone_match = re.search(r',\s*PANTONE\s+(\S+(?:\s+\S+)*)\s*$', model, re.I)
+            if pantone_match and not color_from_model:
+                color_from_model = pantone_match.group(1)
+            
             # Remove bundle text from model name FIRST (before color extraction)
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
@@ -439,14 +447,20 @@ def scrape_category_products(brand, category):
                 r',\s*Box\s*$',
                 r',\s*cover e caric\s*$',
                 r',\s*cover e carica\s*$',
+                # Remove connectivity and other technical specs
+                r',\s*Connettività:\s*\w+\s*$',
+                r',\s*Silver,\s*Connettività:\s*\w+\s*$',
+                r',\s*\w+,\s*Connettività:\s*\w+\s*$',
+                r',\s*Connettività:\s*No\s*$',
+                # Remove PANTONE colors and other specific color patterns (must be AFTER extraction)
+                r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after bundle removal
             model = model.strip()
-            
-            # Extract color from model name as fallback before removing it
-            color_from_model = extract_color_from_model(model)
             
             # Remove color from model name (color should be in separate field only)
             # Common color names to remove from end of model name (English and Italian)
@@ -456,6 +470,9 @@ def scrape_category_products(brand, category):
                 r',\s*(Cobalt\s+Violet|Jet\s+Black|Light\s+Green|Awesome\s+Navy|Silver\s+Blue|White\s+Silver|Titanium\s+Gray|Titanium\s+Silverblue|Titanium\s+Whitesilver)\s*$',
                 r',\s*(Canyon\s+Orange|Tundra\s+Umber|Aurora\s+White|Aurora\s+Blue|Twilight\s+Black|Dusk\s+Black|Titanium\s+Charcoal)\s*$',
                 r',\s*(Silver\s+Shadow|Black/Blue|Black/White|Blue/Black|White/Black)\s*$',
+                # Motorola specific colors
+                r',\s*(Bronze\s+Green|Lily\s+Pad|Denim\s+Blue|Forest\s+Green|Arabesque|Scarab)\s*$',
+                r',\s*(MIDNIGHT\s+BLUE)\s*$',
                 # Italian color patterns
                 r',\s*(Nero|Bianco|Blu|Verde|Rosso|Giallo|Arancione|Viola|Rosa|Grigio|Argento|Oro|Marrone|Beige|Crema|Avorio|Lavanda|Navy|Cobalto|Titanio|Ossidiana|Carbone|Naturale|Profondo|Ghiaccio|Graphite|Menta)\s*$',
                 r',\s*(Nero\s+ossidiana|Viola\s+lavanda|Bianco\s+argento|Nero\s+jet|Verde\s+chiaro|Blu\s+cobalto|Grigio\s+titanio)\s*$'
@@ -491,9 +508,24 @@ def scrape_category_products(brand, category):
             # Determine product type
             product_type = determine_product_type(model, category)
             
+            # Special handling for smartwatches - extract mm as memory
+            if product_type == 'Smartwatch':
+                # Try to extract mm from model name or page
+                mm_match = re.search(r'(\d+)\s*mm', model, re.I)
+                if mm_match:
+                    memory = mm_match.group(1) + " mm"
+                else:
+                    # Try to extract from page
+                    mm_from_page = extract_memory(prod_soup, model)
+                    if 'mm' in mm_from_page.lower():
+                        memory = mm_from_page
+                    else:
+                        memory = 'n/n'
+            
             # Special handling for notebooks
+            pollici = 'n/n'
             if product_type == 'Notebook':
-                # Extract display size for color field
+                # Extract display size for pollici field
                 # Try to extract from URL first (more reliable)
                 # Find all numbers in URL and pick the one that looks like display size
                 all_numbers = re.findall(r'-(\d+)(?:\.?(\d+))?', prod_url)
@@ -510,7 +542,8 @@ def scrape_category_products(brand, category):
                         display_str = num_str.replace(',', '.') + '"'
                         break
                 
-                color = display_str
+                pollici = display_str
+                color = 'n/n'  # Notebooks don't have color
                 
                 # Extract SSD storage from page (look for storage/capacità with larger values)
                 storage_selectors = [
@@ -555,6 +588,8 @@ def scrape_category_products(brand, category):
                             if unit == 'TB' or value > 64:
                                 memory = f"{value * 1000 if unit == 'TB' else value} GB"
                                 break
+            elif product_type == 'Tablet':
+                color = 'n/n'  # Tablets don't have color
                 
                 # Clean model name for notebooks - remove NOTEBOOK, CHROMEBOOK, processore and processor codes
                 model = re.sub(r'\s+NOTEBOOK\s*', ' ', model, flags=re.I)
@@ -578,14 +613,28 @@ def scrape_category_products(brand, category):
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
             
-            products.append({
+            # Build product dictionary with category-specific fields
+            product_dict = {
                 "Marca": brand,
                 "Tipo": product_type,
                 "Modello": model,
-                "Memoria": memory,
-                "Colore": color,
                 "Codice_PIM": pim
-            })
+            }
+            
+            # Add category-specific fields
+            if product_type == 'Smartwatch':
+                product_dict["mm"] = memory
+                product_dict["Colore"] = color
+            elif product_type == 'Notebook':
+                product_dict["Memoria"] = memory
+                product_dict["pollici"] = pollici
+            elif product_type == 'Tablet':
+                product_dict["Memoria"] = memory
+            else:  # Smartphone
+                product_dict["Memoria"] = memory
+                product_dict["Colore"] = color
+            
+            products.append(product_dict)
             
             print(f"    ✓ Added: {model} - PIM: {pim}")
             
@@ -600,6 +649,7 @@ def scrape_with_filters(brand):
     base_url = f"{BASE_URL}/{BRANDS[brand]}"
     products = []
     seen_urls = set()
+    category = 'smartphone'  # Default category for filter-based scraping
     
     # Use Selenium to handle filters and "Show more" button
     chrome_options = Options()
@@ -788,6 +838,23 @@ def scrape_with_filters(brand):
                 print(f"    Skipping: Product '{model}' does not match brand '{brand}'")
                 continue
             
+            # Filter out non-smartphone products
+            exclude_keywords = [
+                'baby monitor', 'monitor', 'auricolari', 'earbuds', 'buds', 'headphones',
+                'cuffie', 'cassa', 'speaker', 'altoparlante', 'caricabatterie', 'charger',
+                'cover', 'case', 'pellicola', 'screen protector', 'cavo', 'cable'
+            ]
+            model_lower = model.lower()
+            should_skip = False
+            for keyword in exclude_keywords:
+                if keyword in model_lower:
+                    print(f"    Skipping: Product '{model}' contains excluded keyword '{keyword}'")
+                    should_skip = True
+                    break
+            
+            if should_skip:
+                continue
+            
             model = re.sub(r'^' + re.escape(brand) + r'\s*', '', model, flags=re.I)
             model = model.strip()
             
@@ -838,9 +905,24 @@ def scrape_with_filters(brand):
             # Determine product type
             product_type = determine_product_type(model, category)
             
+            # Special handling for smartwatches - extract mm as memory
+            if product_type == 'Smartwatch':
+                # Try to extract mm from model name or page
+                mm_match = re.search(r'(\d+)\s*mm', model, re.I)
+                if mm_match:
+                    memory = mm_match.group(1) + " mm"
+                else:
+                    # Try to extract from page
+                    mm_from_page = extract_memory(prod_soup, model)
+                    if 'mm' in mm_from_page.lower():
+                        memory = mm_from_page
+                    else:
+                        memory = 'n/n'
+            
             # Special handling for notebooks
+            pollici = 'n/n'
             if product_type == 'Notebook':
-                # Extract display size for color field
+                # Extract display size for pollici field
                 # Try to extract from URL first (more reliable)
                 # Find all numbers in URL and pick the one that looks like display size
                 all_numbers = re.findall(r'-(\d+)(?:\.?(\d+))?', prod_url)
@@ -857,7 +939,8 @@ def scrape_with_filters(brand):
                         display_str = num_str.replace(',', '.') + '"'
                         break
                 
-                color = display_str
+                pollici = display_str
+                color = 'n/n'  # Notebooks don't have color
                 
                 # Extract SSD storage from page (look for storage/capacità with larger values)
                 storage_selectors = [
@@ -902,6 +985,8 @@ def scrape_with_filters(brand):
                             if unit == 'TB' or value > 64:
                                 memory = f"{value * 1000 if unit == 'TB' else value} GB"
                                 break
+            elif product_type == 'Tablet':
+                color = 'n/n'  # Tablets don't have color
                 
                 # Clean model name for notebooks - remove NOTEBOOK, CHROMEBOOK, processore and processor codes
                 model = re.sub(r'\s+NOTEBOOK\s*', ' ', model, flags=re.I)
@@ -1145,6 +1230,14 @@ def scrape_brand_only(brand):
             model = re.sub(r'^\s*,\s*', '', model)  # Remove leading comma
             model = model.strip()
             
+            # Extract color from model name as fallback before removing it
+            color_from_model = extract_color_from_model(model)
+            
+            # Extract PANTONE colors specifically before removing them
+            pantone_match = re.search(r',\s*PANTONE\s+(\S+(?:\s+\S+)*)\s*$', model, re.I)
+            if pantone_match and not color_from_model:
+                color_from_model = pantone_match.group(1)
+            
             # Remove bundle text from model name FIRST (before color extraction)
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
@@ -1153,14 +1246,20 @@ def scrape_brand_only(brand):
                 r',\s*Box\s*$',
                 r',\s*cover e caric\s*$',
                 r',\s*cover e carica\s*$',
+                # Remove connectivity and other technical specs
+                r',\s*Connettività:\s*\w+\s*$',
+                r',\s*Silver,\s*Connettività:\s*\w+\s*$',
+                r',\s*\w+,\s*Connettività:\s*\w+\s*$',
+                r',\s*Connettività:\s*No\s*$',
+                # Remove PANTONE colors and other specific color patterns (must be AFTER extraction)
+                r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after bundle removal
             model = model.strip()
-            
-            # Extract color from model name as fallback before removing it
-            color_from_model = extract_color_from_model(model)
             
             # Remove color from model name (color should be in separate field only)
             # Common color names to remove from end of model name (English and Italian)
@@ -1170,6 +1269,9 @@ def scrape_brand_only(brand):
                 r',\s*(Cobalt\s+Violet|Jet\s+Black|Light\s+Green|Awesome\s+Navy|Silver\s+Blue|White\s+Silver|Titanium\s+Gray|Titanium\s+Silverblue|Titanium\s+Whitesilver)\s*$',
                 r',\s*(Canyon\s+Orange|Tundra\s+Umber|Aurora\s+White|Aurora\s+Blue|Twilight\s+Black|Dusk\s+Black|Titanium\s+Charcoal)\s*$',
                 r',\s*(Silver\s+Shadow|Black/Blue|Black/White|Blue/Black|White/Black)\s*$',
+                # Motorola specific colors
+                r',\s*(Bronze\s+Green|Lily\s+Pad|Denim\s+Blue|Forest\s+Green|Arabesque|Scarab)\s*$',
+                r',\s*(MIDNIGHT\s+BLUE)\s*$',
                 # Italian color patterns
                 r',\s*(Nero|Bianco|Blu|Verde|Rosso|Giallo|Arancione|Viola|Rosa|Grigio|Argento|Oro|Marrone|Beige|Crema|Avorio|Lavanda|Navy|Cobalto|Titanio|Ossidiana|Carbone|Naturale|Profondo|Ghiaccio|Graphite|Menta)\s*$',
                 r',\s*(Nero\s+ossidiana|Viola\s+lavanda|Bianco\s+argento|Nero\s+jet|Verde\s+chiaro|Blu\s+cobalto|Grigio\s+titanio)\s*$'
@@ -1205,9 +1307,24 @@ def scrape_brand_only(brand):
             # Determine product type
             product_type = determine_product_type(model, category)
             
+            # Special handling for smartwatches - extract mm as memory
+            if product_type == 'Smartwatch':
+                # Try to extract mm from model name or page
+                mm_match = re.search(r'(\d+)\s*mm', model, re.I)
+                if mm_match:
+                    memory = mm_match.group(1) + " mm"
+                else:
+                    # Try to extract from page
+                    mm_from_page = extract_memory(prod_soup, model)
+                    if 'mm' in mm_from_page.lower():
+                        memory = mm_from_page
+                    else:
+                        memory = 'n/n'
+            
             # Special handling for notebooks
+            pollici = 'n/n'
             if product_type == 'Notebook':
-                # Extract display size for color field
+                # Extract display size for pollici field
                 # Try to extract from URL first (more reliable)
                 # Find all numbers in URL and pick the one that looks like display size
                 all_numbers = re.findall(r'-(\d+)(?:\.?(\d+))?', prod_url)
@@ -1224,7 +1341,8 @@ def scrape_brand_only(brand):
                         display_str = num_str.replace(',', '.') + '"'
                         break
                 
-                color = display_str
+                pollici = display_str
+                color = 'n/n'  # Notebooks don't have color
                 
                 # Extract SSD storage from page (look for storage/capacità with larger values)
                 storage_selectors = [
@@ -1269,6 +1387,8 @@ def scrape_brand_only(brand):
                             if unit == 'TB' or value > 64:
                                 memory = f"{value * 1000 if unit == 'TB' else value} GB"
                                 break
+            elif product_type == 'Tablet':
+                color = 'n/n'  # Tablets don't have color
                 
                 # Clean model name for notebooks - remove NOTEBOOK, CHROMEBOOK, processore and processor codes
                 model = re.sub(r'\s+NOTEBOOK\s*', ' ', model, flags=re.I)
@@ -1292,14 +1412,28 @@ def scrape_brand_only(brand):
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
             
-            products.append({
+            # Build product dictionary with category-specific fields
+            product_dict = {
                 "Marca": brand,
                 "Tipo": product_type,
                 "Modello": model,
-                "Memoria": memory,
-                "Colore": color,
                 "Codice_PIM": pim
-            })
+            }
+            
+            # Add category-specific fields
+            if product_type == 'Smartwatch':
+                product_dict["mm"] = memory
+                product_dict["Colore"] = color
+            elif product_type == 'Notebook':
+                product_dict["Memoria"] = memory
+                product_dict["pollici"] = pollici
+            elif product_type == 'Tablet':
+                product_dict["Memoria"] = memory
+            else:  # Smartphone
+                product_dict["Memoria"] = memory
+                product_dict["Colore"] = color
+            
+            products.append(product_dict)
             
             print(f"    ✓ Added: {model} - PIM: {pim}")
             
@@ -1309,44 +1443,140 @@ def scrape_brand_only(brand):
     
     return products
 
+def import_from_csv(csv_file="mediaworld_products.csv"):
+    """Import products from a CSV file into the separate databases"""
+    if not os.path.exists(csv_file):
+        print(f"File {csv_file} not found.")
+        return
+    
+    # Read products from CSV
+    products = []
+    with open(csv_file, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Transform to match the expected format
+            product = {
+                "Marca": row.get('Marca', ''),
+                "Tipo": row.get('Tipo', ''),
+                "Modello": row.get('Modello', ''),
+                "Codice_PIM": row.get('Codice_PIM', '')
+            }
+            
+            # Add category-specific fields
+            product_type = row.get('Tipo', '')
+            if product_type == 'Smartwatch':
+                product["mm"] = row.get('mm', 'n/n')
+                product["Colore"] = row.get('Colore', 'n/n')
+            elif product_type == 'Notebook':
+                product["Memoria"] = row.get('Memoria', 'n/n')
+                product["pollici"] = row.get('pollici', 'n/n')
+            elif product_type == 'Tablet':
+                product["Memoria"] = row.get('Memoria', 'n/n')
+            else:  # Smartphone
+                product["Memoria"] = row.get('Memoria', 'n/n')
+                product["Colore"] = row.get('Colore', 'n/n')
+            
+            products.append(product)
+    
+    print(f"Loaded {len(products)} products from {csv_file}")
+    
+    # Import using the existing function
+    import_to_database(products)
+
 def import_to_database(new_products):
-    """Import scraped products into database_telefoni.csv"""
-    database_file = "database_telefoni.csv"
+    """Import scraped products into separate CSV files by category"""
+    # Define file configurations for each category
+    category_files = {
+        'Smartphone': {
+            'file': 'databases/database_smartphone.csv',
+            'fieldnames': ['Marca', 'Tipo', 'Modello', 'Memoria', 'Colore', 'Codice_PIM']
+        },
+        'Smartwatch': {
+            'file': 'databases/database_smartwatch.csv',
+            'fieldnames': ['Marca', 'Tipo', 'Modello', 'mm', 'Colore', 'Codice_PIM']
+        },
+        'Tablet': {
+            'file': 'databases/database_tablet.csv',
+            'fieldnames': ['Marca', 'Tipo', 'Modello', 'Memoria', 'Codice_PIM']
+        },
+        'Notebook': {
+            'file': 'databases/database_notebook.csv',
+            'fieldnames': ['Marca', 'Tipo', 'Modello', 'Memoria', 'pollici', 'Codice_PIM']
+        }
+    }
     
-    # Load existing database
-    existing_products = []
-    if os.path.exists(database_file):
-        with open(database_file, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            existing_products = list(reader)
+    total_added = 0
     
-    # Create a set of existing PIM codes to avoid duplicates
-    existing_pims = {p['Codice_PIM'] for p in existing_products if p.get('Codice_PIM')}
+    for category, config in category_files.items():
+        database_file = config['file']
+        fieldnames = config['fieldnames']
+        
+        # Load existing database
+        existing_products = []
+        if os.path.exists(database_file):
+            with open(database_file, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                existing_products = list(reader)
+        
+        # Create a set of existing PIM codes to avoid duplicates
+        existing_pims = {p['Codice_PIM'] for p in existing_products if p.get('Codice_PIM')}
+        
+        # Filter products for this category
+        category_products = [p for p in new_products if p['Tipo'] == category]
+        
+        # Add new products that don't already exist
+        added_count = 0
+        for product in category_products:
+            if product['Codice_PIM'] not in existing_pims:
+                # Transform product to match category-specific fieldnames
+                transformed_product = {}
+                for field in fieldnames:
+                    if field == 'mm' and category == 'Smartwatch':
+                        # For smartwatch, use memory field as mm
+                        transformed_product[field] = product.get('Memoria', 'n/n')
+                    elif field == 'pollici' and category == 'Notebook':
+                        # For notebook, use color field as pollici (display size)
+                        transformed_product[field] = product.get('Colore', 'n/n')
+                    elif field == 'Colore' and category == 'Notebook':
+                        # Notebooks don't have color
+                        transformed_product[field] = 'n/n'
+                    elif field == 'Colore' and category == 'Tablet':
+                        # Tablets don't have color
+                        transformed_product[field] = 'n/n'
+                    else:
+                        transformed_product[field] = product.get(field, 'n/n')
+                
+                existing_products.append(transformed_product)
+                existing_pims.add(product['Codice_PIM'])
+                added_count += 1
+        
+        # Save updated database
+        with open(database_file, "w", newline='', encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            for product in existing_products:
+                writer.writerow(product)
+        
+        if added_count > 0:
+            print(f"Imported {added_count} new {category} products to {database_file}")
+            print(f"Total {category} products in database: {len(existing_products)}")
+        
+        total_added += added_count
     
-    # Add new products that don't already exist
-    added_count = 0
-    for product in new_products:
-        if product['Codice_PIM'] not in existing_pims:
-            existing_products.append(product)
-            existing_pims.add(product['Codice_PIM'])
-            added_count += 1
-    
-    # Save updated database
-    with open(database_file, "w", newline='', encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["Marca", "Tipo", "Modello", "Memoria", "Colore", "Codice_PIM"])
-        writer.writeheader()
-        for product in existing_products:
-            writer.writerow(product)
-    
-    print(f"\nImported {added_count} new products to {database_file}")
-    print(f"Total products in database: {len(existing_products)}")
+    print(f"\nTotal imported products across all categories: {total_added}")
 
 def main():
     """Main scraping function"""
     import sys
     
+    # Check if user wants to import from CSV
+    if len(sys.argv) > 1 and sys.argv[1] == '--import':
+        csv_file = sys.argv[2] if len(sys.argv) > 2 else "mediaworld_products.csv"
+        import_from_csv(csv_file)
+        return
+    
     # Check if brand is specified as command line argument
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and sys.argv[1] != '--import':
         selected_brand = sys.argv[1]
         if selected_brand not in BRANDS:
             print(f"Error: Brand '{selected_brand}' not found. Available brands: {', '.join(BRANDS.keys())}")
@@ -1432,10 +1662,10 @@ def main():
         output_file = "mediaworld_products.csv"
         with open(output_file, "w", encoding="utf-8") as f:
             # Write header
-            f.write("Marca,Tipo,Modello,Memoria,Colore,Codice_PIM\n")
+            f.write("Marca,Tipo,Modello,Memoria,mm,pollici,Colore,Codice_PIM\n")
             # Write each product manually to avoid CSV quoting
             for product in all_products:
-                line = f"{product['Marca']},{product['Tipo']},{product['Modello']},{product['Memoria']},{product['Colore']},{product['Codice_PIM']}\n"
+                line = f"{product['Marca']},{product['Tipo']},{product['Modello']},{product.get('Memoria', 'n/n')},{product.get('mm', 'n/n')},{product.get('pollici', 'n/n')},{product.get('Colore', 'n/n')},{product['Codice_PIM']}\n"
                 f.write(line)
         
         print(f"\n{'='*60}")
@@ -1446,7 +1676,7 @@ def main():
         
         # Ask if user wants to import to database
         try:
-            import_choice = input("\nDo you want to import these products to database_telefoni.csv? (y/n): ").strip().lower()
+            import_choice = input("\nDo you want to import these products to the databases? (y/n): ").strip().lower()
             if import_choice == 'y':
                 import_to_database(all_products)
         except (EOFError, KeyboardInterrupt):

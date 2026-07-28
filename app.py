@@ -9,9 +9,12 @@ import os
 # Configuration
 # PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
 PASSWORD = None  # Set to None to disable password authentication
-CSV_FILE = "database_telefoni.csv"
-SERVICES_CSV_FILE = "database_servizi.csv"
-APP_VERSION = "1.2"  # Version to verify deployment
+SMARTPHONE_CSV_FILE = "databases/database_smartphone.csv"
+SMARTWATCH_CSV_FILE = "databases/database_smartwatch.csv"
+TABLET_CSV_FILE = "databases/database_tablet.csv"
+NOTEBOOK_CSV_FILE = "databases/database_notebook.csv"
+SERVICES_CSV_FILE = "databases/database_servizi.csv"
+APP_VERSION = "2.0"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -40,22 +43,54 @@ if 'services_subcategory' not in st.session_state:
 if 'selected_service' not in st.session_state:
     st.session_state.selected_service = None
 
-def load_database():
-    """Load phone database from CSV file"""
+def load_database(category=None):
+    """Load phone database from appropriate CSV file based on category"""
     try:
-        if os.path.exists(CSV_FILE):
-            # Specify dtype to prevent automatic conversion to float
-            df = pd.read_csv(CSV_FILE, dtype={'Codice_PIM': str})
-            # Ensure required columns exist
-            required_columns = ['Marca', 'Tipo', 'Modello', 'Memoria', 'Colore', 'Codice_PIM']
-            for col in required_columns:
-                if col not in df.columns:
-                    st.error(f"Colonna mancante nel CSV: {col}")
-                    return None
-            return df
+        if category is None:
+            # Load all databases and combine them
+            dfs = []
+            for csv_file, cat_name in [(SMARTPHONE_CSV_FILE, 'Smartphone'), 
+                                        (SMARTWATCH_CSV_FILE, 'Smartwatch'),
+                                        (TABLET_CSV_FILE, 'Tablet'),
+                                        (NOTEBOOK_CSV_FILE, 'Notebook')]:
+                if os.path.exists(csv_file):
+                    df = pd.read_csv(csv_file, dtype={'Codice_PIM': str})
+                    dfs.append(df)
+            if dfs:
+                return pd.concat(dfs, ignore_index=True)
+            else:
+                st.error("Nessun database trovato")
+                return None
         else:
-            st.error(f"File {CSV_FILE} non trovato")
-            return None
+            # Load specific database based on category
+            csv_file = None
+            if category == 'Smartphone':
+                csv_file = SMARTPHONE_CSV_FILE
+                required_columns = ['Marca', 'Tipo', 'Modello', 'Memoria', 'Colore', 'Codice_PIM']
+            elif category == 'Smartwatch':
+                csv_file = SMARTWATCH_CSV_FILE
+                required_columns = ['Marca', 'Tipo', 'Modello', 'mm', 'Colore', 'Codice_PIM']
+            elif category == 'Tablet':
+                csv_file = TABLET_CSV_FILE
+                required_columns = ['Marca', 'Tipo', 'Modello', 'Memoria', 'Codice_PIM']
+            elif category == 'Notebook':
+                csv_file = NOTEBOOK_CSV_FILE
+                required_columns = ['Marca', 'Tipo', 'Modello', 'Memoria', 'pollici', 'Codice_PIM']
+            else:
+                st.error(f"Categoria non valida: {category}")
+                return None
+            
+            if os.path.exists(csv_file):
+                df = pd.read_csv(csv_file, dtype={'Codice_PIM': str})
+                # Ensure required columns exist
+                for col in required_columns:
+                    if col not in df.columns:
+                        st.error(f"Colonna mancante nel CSV {csv_file}: {col}")
+                        return None
+                return df
+            else:
+                st.error(f"File {csv_file} non trovato")
+                return None
     except Exception as e:
         st.error(f"Errore nel caricamento del database: {e}")
         return None
@@ -77,38 +112,6 @@ def load_services_database():
     except Exception as e:
         st.error(f"Errore nel caricamento del database servizi: {e}")
         return None
-
-def resize_and_crop(img, target_width, target_height):
-    """Resize and crop image to target dimensions maintaining aspect ratio"""
-    # Get current dimensions
-    current_width, current_height = img.size
-    
-    # Calculate aspect ratios
-    target_ratio = target_width / target_height
-    current_ratio = current_width / current_height
-    
-    if current_ratio > target_ratio:
-        # Image is wider than target - crop width
-        new_height = current_height
-        new_width = int(new_height * target_ratio)
-        left = (current_width - new_width) // 2
-        top = 0
-        right = left + new_width
-        bottom = current_height
-    else:
-        # Image is taller than target - crop height
-        new_width = current_width
-        new_height = int(new_width / target_ratio)
-        left = 0
-        top = (current_height - new_height) // 2
-        right = current_width
-        bottom = top + new_height
-    
-    # Crop and resize
-    img = img.crop((left, top, right, bottom))
-    img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
-    
-    return img
 
 def generate_barcode(pim_code, text=None):
     """Generate ITF-25 barcode image with 6-digit PIM code"""
@@ -184,14 +187,38 @@ def main_app():
             </style>
         """, unsafe_allow_html=True)
     
+    # Search bar
+    if 'search_counter' not in st.session_state:
+        st.session_state.search_counter = 0
+    
+    col_search, col_clear = st.columns([9, 1])
+    with col_search:
+        search_query = st.text_input("🔍 Cerca prodotto (modello, marca o codice PIM):", key=f"search_bar_{st.session_state.search_counter}")
+    with col_clear:
+        st.markdown("""
+            <style>
+            div[data-testid="stVerticalBlock"] > div > div > div[data-testid="stButton"] {
+                margin-top: 1.6rem;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        if st.button("✖️", key="clear_search", help="Cancella ricerca", use_container_width=True):
+            st.session_state.search_counter += 1
+            st.rerun()
+    
+    if search_query:
+        show_search_results(search_query)
+        st.markdown("---")
+    
+    # Navigation buttons
     col1, col2 = st.columns([1, 1])
     with col1:
         if st.session_state.current_section == 'phones':
-            if st.button("📱 Telefoni", key="nav_phones", type="primary", width='stretch', use_container_width=True):
+            if st.button("📱 Dispositivi", key="nav_phones", type="primary", width='stretch', use_container_width=True):
                 st.session_state.current_section = 'phones'
                 st.rerun()
         else:
-            if st.button("📱 Telefoni", key="nav_phones", width='stretch', use_container_width=True):
+            if st.button("📱 Dispositivi", key="nav_phones", width='stretch', use_container_width=True):
                 st.session_state.current_section = 'phones'
                 st.rerun()
     with col2:
@@ -203,8 +230,6 @@ def main_app():
             if st.button("🔧 Servizi e Software", key="nav_services", width='stretch', use_container_width=True):
                 st.session_state.current_section = 'services'
                 st.rerun()
-    
-    st.markdown("---")
     
     # Route to appropriate section
     if st.session_state.current_section == 'services':
@@ -354,50 +379,37 @@ def go_back_services():
     st.rerun()
 
 def show_brands_view(df):
-    """Display all brands as buttons with logos"""
+    """Display all brands as buttons"""
     st.subheader("Seleziona Marchio")
     
     brands = df['Marca'].unique()
     
-    # Create grid of brand buttons
-    cols = st.columns(min(3, len(brands)))
+    # Linear view for mobile
     for idx, brand in enumerate(brands):
-        col_idx = idx % len(cols)
-        with cols[col_idx]:
-            # Try to load brand logo
-            logo_path = f"images/brands/{brand.lower().replace(' ', '_')}.png"
-            if os.path.exists(logo_path):
-                # Load image and add white background if transparent
-                img = Image.open(logo_path)
-                if img.mode in ('RGBA', 'LA', 'P'):
-                    # Create white background
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    if img.mode == 'P':
-                        img = img.convert('RGBA')
-                    if img.mode in ('RGBA', 'LA'):
-                        background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
-                        img = background
-                    else:
-                        img = img.convert('RGB')
-                # Resize and crop to 720x390
-                img = resize_and_crop(img, 720, 390)
-                st.image(img, width='stretch')
-            
-            if st.button(brand, key=f"brand_{brand}", width='stretch'):
-                st.session_state.selected_brand = brand
-                st.rerun()
+        if st.button(brand, key=f"brand_{brand}", width='stretch'):
+            st.session_state.selected_brand = brand
+            st.rerun()
 
 def show_categories_view(df):
     """Display categories for selected brand"""
     brand = st.session_state.selected_brand
     st.subheader(f"{brand} - Seleziona Categoria")
     
-    # Filter by brand
-    brand_df = df[df['Marca'] == brand]
+    # Load all databases to get available categories for this brand
+    all_categories = set()
+    for csv_file, cat_name in [(SMARTPHONE_CSV_FILE, 'Smartphone'), 
+                                (SMARTWATCH_CSV_FILE, 'Smartwatch'),
+                                (TABLET_CSV_FILE, 'Tablet'),
+                                (NOTEBOOK_CSV_FILE, 'Notebook')]:
+        if os.path.exists(csv_file):
+            cat_df = pd.read_csv(csv_file, dtype={'Codice_PIM': str})
+            brand_cat_df = cat_df[cat_df['Marca'] == brand]
+            if not brand_cat_df.empty:
+                all_categories.add(cat_name)
     
-    # Get categories from Tipo column preserving database order
-    categories = brand_df['Tipo'].drop_duplicates()
-    categories = [c for c in categories if pd.notna(c) and c != '']
+    # Define desired order
+    desired_order = ['Smartphone', 'Smartwatch', 'Tablet', 'Notebook']
+    categories = [cat for cat in desired_order if cat in all_categories]
     
     # If only one category, skip to models
     if len(categories) == 1:
@@ -413,16 +425,13 @@ def show_categories_view(df):
         'Notebook': '💻'
     }
     
-    # Display category buttons
-    cols = st.columns(min(2, len(categories)))
+    # Linear view for mobile
     for idx, category in enumerate(categories):
-        col_idx = idx % len(cols)
-        with cols[col_idx]:
-            emoji = category_emojis.get(category, '📱')
-            category_name = f"{emoji} {category.capitalize()}"
-            if st.button(category_name, key=f"cat_{category}", width='stretch'):
-                st.session_state.selected_category = category
-                st.rerun()
+        emoji = category_emojis.get(category, '📱')
+        category_name = f"{emoji} {category.capitalize()}"
+        if st.button(category_name, key=f"cat_{category}", width='stretch'):
+            st.session_state.selected_category = category
+            st.rerun()
 
 def show_models_view(df):
     """Display models for selected brand and category"""
@@ -430,60 +439,78 @@ def show_models_view(df):
     category = st.session_state.selected_category
     st.subheader(f"{brand} - {category.capitalize()}")
     
-    # Filter by brand and category using Tipo column
-    category_df = df[(df['Marca'] == brand) & (df['Tipo'] == category)]
+    # Load specific database for this category
+    category_df = load_database(category)
+    if category_df is None:
+        st.warning(f"Impossibile caricare il database per {category}")
+        return
+    
+    # Filter by brand
+    category_df = category_df[category_df['Marca'] == brand]
     
     models = category_df['Modello'].drop_duplicates()
     
     # Category emojis for model buttons
     category_emojis = {
         'Smartphone': '📲',
-        'Smartwatch': '⌚'
+        'Smartwatch': '⌚',
+        'Tablet': '📱',
+        'Notebook': '💻'
     }
     model_emoji = category_emojis.get(category, '📲')
     
     # Use simple sequential rendering to ensure consistent order across devices
     for idx, model in enumerate(models):
-        # Try to load model image
-        model_filename = model.lower().replace(' ', '_').replace('/', '_')
-        model_path = f"images/models/{model_filename}.png"
-        if os.path.exists(model_path):
-            # Load image and add white background if transparent
-            img = Image.open(model_path)
-            if img.mode in ('RGBA', 'LA', 'P'):
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                if img.mode == 'P':
-                    img = img.convert('RGBA')
-                if img.mode in ('RGBA', 'LA'):
-                    background.paste(img, mask=img.split()[-1])
-                    img = background
-                else:
-                    img = img.convert('RGB')
-            # Resize and crop to 720x390
-            img = resize_and_crop(img, 720, 390)
-            st.image(img, width='stretch')
-        
         if st.button(f"{model_emoji} {model}", key=f"model_{idx}", width='stretch'):
             st.session_state.selected_model = model
-            # Check if model has single memory (filter out empty/NaN and "n/n")
-            model_df = df[df['Modello'] == model]
-            memories = model_df['Memoria'].dropna().unique()
-            memories = [m for m in memories if m and str(m).strip() != '' and str(m).strip().lower() != 'n/n']
-            st.session_state.model_has_single_memory = (len(memories) <= 1)
+            # Check if model has single spec based on category
+            model_df = category_df[category_df['Modello'] == model]
+            if category == 'Smartwatch':
+                spec_column = 'mm'
+            elif category == 'Notebook':
+                spec_column = 'pollici'
+            else:
+                spec_column = 'Memoria'
+            
+            specs = model_df[spec_column].dropna().unique()
+            specs = [s for s in specs if s and str(s).strip() != '' and str(s).strip().lower() != 'n/n']
+            st.session_state.model_has_single_memory = (len(specs) <= 1)
             st.rerun()
 
 def show_memories_view(df):
-    """Display memory options for selected model"""
-    brand_model_df = df[
-        (df['Marca'] == st.session_state.selected_brand) & 
-        (df['Modello'] == st.session_state.selected_model)
+    """Display memory options for selected model (or mm for smartwatch, pollici for notebook)"""
+    category = st.session_state.selected_category
+    
+    # Load specific database for this category
+    category_df = load_database(category)
+    if category_df is None:
+        st.warning(f"Impossibile caricare il database per {category}")
+        return
+    
+    brand_model_df = category_df[
+        (category_df['Marca'] == st.session_state.selected_brand) & 
+        (category_df['Modello'] == st.session_state.selected_model)
     ]
     
+    # Determine which column to use based on category
+    if category == 'Smartwatch':
+        spec_column = 'mm'
+        spec_label = 'Dimensioni'
+        spec_emoji = '⌚'
+    elif category == 'Notebook':
+        spec_column = 'pollici'
+        spec_label = 'Dimensioni'
+        spec_emoji = '💻'
+    else:
+        spec_column = 'Memoria'
+        spec_label = 'Memoria'
+        spec_emoji = '💾'
+    
     # Filter out empty/NaN memories and "n/n" (not applicable)
-    memories = brand_model_df['Memoria'].dropna().unique()
+    memories = brand_model_df[spec_column].dropna().unique()
     memories = [m for m in memories if m and str(m).strip() != '' and str(m).strip().lower() != 'n/n']
     
-    # If no valid memories or only one, skip directly to colors
+    # If no valid memories or only one, skip directly to colors (or next step)
     if len(memories) <= 1:
         # Use empty string for memory if no valid memories (product has only "n/n")
         st.session_state.selected_memory = memories[0] if len(memories) == 1 else 'n/n'
@@ -492,42 +519,83 @@ def show_memories_view(df):
     # Show memory options
     st.subheader(f"Modello: {st.session_state.selected_model}")
     
-    cols = st.columns(min(2, len(memories)))
+    # Linear view for mobile
     for idx, memory in enumerate(memories):
-        col_idx = idx % len(cols)
-        with cols[col_idx]:
-            if st.button(f"💾 {memory}", key=f"memory_{idx}", width='stretch'):
-                st.session_state.selected_memory = memory
-                st.rerun()
+        if st.button(f"{spec_emoji} {memory}", key=f"memory_{idx}", width='stretch'):
+            st.session_state.selected_memory = memory
+            st.rerun()
 
 def show_colors_view(df):
-    """Display color options for selected memory with color swatches"""
+    """Display color options for selected memory with color swatches (or pollici for notebook)"""
     st.subheader(f"Modello: {st.session_state.selected_model}")
     
-    # Show memory only if it's not empty
+    category = st.session_state.selected_category
+    
+    # Load specific database for this category
+    category_df = load_database(category)
+    if category_df is None:
+        st.warning(f"Impossibile caricare il database per {category}")
+        return
+    
+    # Show memory/pollici/mm only if it's not empty
     if st.session_state.selected_memory and str(st.session_state.selected_memory).strip():
-        st.write(f"**Memoria:** {st.session_state.selected_memory}")
+        if category == 'Smartwatch':
+            st.write(f"**Dimensioni:** {st.session_state.selected_memory}")
+        elif category == 'Notebook':
+            st.write(f"**Dimensioni:** {st.session_state.selected_memory}")
+        else:
+            st.write(f"**Memoria:** {st.session_state.selected_memory}")
+    
+    # For notebook, skip color selection and go directly to barcode
+    if category == 'Notebook':
+        brand_model_df = category_df[
+            (category_df['Marca'] == st.session_state.selected_brand) & 
+            (category_df['Modello'] == st.session_state.selected_model)
+        ]
+        # Filter by pollici if selected
+        if st.session_state.selected_memory and str(st.session_state.selected_memory).strip() and str(st.session_state.selected_memory).strip().lower() != 'n/n':
+            brand_model_df = brand_model_df[brand_model_df['pollici'] == st.session_state.selected_memory]
+        
+        if not brand_model_df.empty:
+            st.session_state.selected_variant = brand_model_df.iloc[0].to_dict()
+            st.session_state.skipped_color_selection = True
+            st.rerun()
+            return
     
     # Filter by brand and model
-    brand_model_df = df[
-        (df['Marca'] == st.session_state.selected_brand) & 
-        (df['Modello'] == st.session_state.selected_model)
+    brand_model_df = category_df[
+        (category_df['Marca'] == st.session_state.selected_brand) & 
+        (category_df['Modello'] == st.session_state.selected_model)
     ]
     
-    # Check if product has only "n/n" memories (no valid memories)
-    valid_memories = brand_model_df['Memoria'].apply(lambda x: str(x).strip().lower() != 'n/n')
-    has_only_n_n = not valid_memories.any()
+    # Determine which column to use for filtering based on category
+    if category == 'Smartwatch':
+        filter_column = 'mm'
+    elif category == 'Notebook':
+        filter_column = 'pollici'
+    else:
+        filter_column = 'Memoria'
     
-    # If memory is selected and not empty (and not "n/n"), filter by memory too
+    # Check if product has only "n/n" in the filter column (no valid values)
+    if filter_column in brand_model_df.columns:
+        valid_memories = brand_model_df[filter_column].apply(lambda x: str(x).strip().lower() != 'n/n')
+        has_only_n_n = not valid_memories.any()
+    else:
+        has_only_n_n = False
+    
+    # If filter value is selected and not empty (and not "n/n"), filter by it
     memory = str(st.session_state.selected_memory).strip() if st.session_state.selected_memory else ''
-    if memory and memory.lower() != 'n/n':
-        brand_model_memory_df = brand_model_df[brand_model_df['Memoria'] == memory]
+    if memory and memory.lower() != 'n/n' and filter_column in brand_model_df.columns:
+        brand_model_memory_df = brand_model_df[brand_model_df[filter_column] == memory]
     elif has_only_n_n:
-        # If product has only "n/n" memories, show all of them (don't filter out)
+        # If product has only "n/n" values, show all of them (don't filter out)
         brand_model_memory_df = brand_model_df
     else:
-        # If no memory selected but product has valid memories, filter out "n/n"
-        brand_model_memory_df = brand_model_df[valid_memories]
+        # If no filter value selected but product has valid values, filter out "n/n"
+        if filter_column in brand_model_df.columns:
+            brand_model_memory_df = brand_model_df[valid_memories]
+        else:
+            brand_model_memory_df = brand_model_df
     
     # Safety check: if no results, show all variants
     if brand_model_memory_df.empty:
@@ -539,10 +607,18 @@ def show_colors_view(df):
         return
     
     # Check if all colors are "n/n" - if so, skip directly to barcode
-    colors = brand_model_memory_df['Colore'].unique()
-    all_n_n = all(str(c).strip().lower() == 'n/n' for c in colors)
-    if all_n_n and len(colors) == 1:
-        # Automatically select the variant and skip to barcode
+    # Only check colors if the column exists (tablets and notebooks don't have colors)
+    if 'Colore' in brand_model_memory_df.columns:
+        colors = brand_model_memory_df['Colore'].unique()
+        all_n_n = all(str(c).strip().lower() == 'n/n' for c in colors)
+        if all_n_n and len(colors) == 1:
+            # Automatically select the variant and skip to barcode
+            st.session_state.selected_variant = brand_model_memory_df.iloc[0].to_dict()
+            st.session_state.skipped_color_selection = True
+            st.rerun()
+            return
+    else:
+        # No color column, skip directly to barcode
         st.session_state.selected_variant = brand_model_memory_df.iloc[0].to_dict()
         st.session_state.skipped_color_selection = True
         st.rerun()
@@ -615,50 +691,24 @@ def show_colors_view(df):
         'titanium silver': '#C0C0C0',
     }
     
-    cols = st.columns(max(1, min(2, len(brand_model_memory_df))))
+    # Linear view for mobile
     for idx, row in brand_model_memory_df.iterrows():
-        col_idx = idx % len(cols)
-        with cols[col_idx]:
-            color_name = row['Colore'].lower()
-            
-            # Try to get color from mapping or load image
-            if color_name in color_map:
-                hex_color = color_map[color_name]
-                st.markdown(f"""
-                    <div style="background-color: {hex_color}; width: 100px; height: 100px; border-radius: 10px; margin: 0 auto; border: 2px solid #ddd;"></div>
-                """, unsafe_allow_html=True)
-            else:
-                # Try to load color image
-                color_filename = color_name.replace(' ', '_').replace('/', '_')
-                color_path = f"images/colors/{color_filename}.png"
-                if os.path.exists(color_path):
-                    # Load image and add white background if transparent
-                    img = Image.open(color_path)
-                    if img.mode in ('RGBA', 'LA', 'P'):
-                        background = Image.new('RGB', img.size, (255, 255, 255))
-                        if img.mode == 'P':
-                            img = img.convert('RGBA')
-                        if img.mode in ('RGBA', 'LA'):
-                            background.paste(img, mask=img.split()[-1])
-                            img = background
-                        else:
-                            img = img.convert('RGB')
-                    # Resize and crop to 720x390
-                    img = resize_and_crop(img, 720, 390)
-                    st.image(img, width='stretch')
-                else:
-                    # Fallback to colored square with default gray
-                    st.markdown("""
-                        <div style="background-color: #CCCCCC; width: 100px; height: 100px; border-radius: 10px; margin: 0 auto; border: 2px solid #ddd;"></div>
-                    """, unsafe_allow_html=True)
-            
-            if st.button(f"🎨 {row['Colore']}", key=f"color_{idx}", width='stretch'):
-                st.session_state.selected_variant = row.to_dict()
-                st.rerun()
+        color_name = row['Colore'].lower()
+        
+        # Try to get color from mapping, otherwise use default gray
+        hex_color = color_map.get(color_name, '#CCCCCC')
+        st.markdown(f"""
+            <div style="background-color: {hex_color}; width: 100px; height: 100px; border-radius: 10px; margin: 0 auto; border: 2px solid #ddd;"></div>
+        """, unsafe_allow_html=True)
+        
+        if st.button(f"🎨 {row['Colore']}", key=f"color_{idx}", width='stretch'):
+            st.session_state.selected_variant = row.to_dict()
+            st.rerun()
 
 def show_variant_view(df):
     """Display final view with PIM code and barcode"""
     variant = st.session_state.selected_variant
+    category = st.session_state.selected_category
     
     st.subheader(f"{variant['Marca']} - {variant['Modello']}")
     st.markdown("---")
@@ -666,8 +716,17 @@ def show_variant_view(df):
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.write(f"**Memoria:** {variant['Memoria']}")
-        st.write(f"**Colore:** {variant['Colore']}")
+        if category == 'Smartwatch':
+            st.write(f"**Dimensioni:** {variant.get('mm', 'N/A')}")
+            st.write(f"**Colore:** {variant.get('Colore', 'N/A')}")
+        elif category == 'Notebook':
+            st.write(f"**Memoria:** {variant.get('Memoria', 'N/A')}")
+            st.write(f"**Dimensioni:** {variant.get('pollici', 'N/A')}")
+        elif category == 'Tablet':
+            st.write(f"**Memoria:** {variant.get('Memoria', 'N/A')}")
+        else:  # Smartphone
+            st.write(f"**Memoria:** {variant.get('Memoria', 'N/A')}")
+            st.write(f"**Colore:** {variant.get('Colore', 'N/A')}")
         st.write(f"**Codice PIM:** {variant['Codice_PIM']}")
     
     with col2:
@@ -677,6 +736,102 @@ def show_variant_view(df):
         if barcode_img is not None:
             st.image(barcode_img, width=400)
             st.success("Codice a barre generato con successo!")
+
+def show_search_results(query):
+    """Display search results for products and services matching the query"""
+    query_lower = query.lower()
+    
+    # Search in all phone databases
+    phone_results = []
+    for csv_file, cat_name in [(SMARTPHONE_CSV_FILE, 'Smartphone'), 
+                                (SMARTWATCH_CSV_FILE, 'Smartwatch'),
+                                (TABLET_CSV_FILE, 'Tablet'),
+                                (NOTEBOOK_CSV_FILE, 'Notebook')]:
+        if os.path.exists(csv_file):
+            try:
+                df = pd.read_csv(csv_file, dtype={'Codice_PIM': str})
+                cat_results = df[
+                    df['Modello'].str.lower().str.contains(query_lower, na=False) |
+                    df['Marca'].str.lower().str.contains(query_lower, na=False) |
+                    df['Codice_PIM'].astype(str).str.contains(query_lower, na=False)
+                ]
+                if not cat_results.empty:
+                    phone_results.append(cat_results)
+            except Exception as e:
+                st.error(f"Errore nella ricerca in {csv_file}: {e}")
+    
+    # Combine all phone results
+    if phone_results:
+        phone_results = pd.concat(phone_results, ignore_index=True)
+    else:
+        phone_results = None
+    
+    # Search in services database
+    df_services = load_services_database()
+    
+    service_results = None
+    if df_services is not None:
+        service_results = df_services[
+            df_services['Servizio'].str.lower().str.contains(query_lower, na=False) |
+            df_services['Categoria'].str.lower().str.contains(query_lower, na=False) |
+            df_services['Sottocategoria'].str.lower().str.contains(query_lower, na=False) |
+            df_services['Codice'].astype(str).str.contains(query_lower, na=False)
+        ]
+    
+    # Check if any results found
+    has_phone_results = phone_results is not None and not phone_results.empty
+    has_service_results = service_results is not None and not service_results.empty
+    
+    if not has_phone_results and not has_service_results:
+        st.info("Nessun prodotto o servizio trovato per la ricerca.")
+        return
+    
+    # Display phone results
+    if has_phone_results:
+        st.subheader(f"📱 Dispositivi ({len(phone_results)} trovati)")
+        for idx, row in phone_results.iterrows():
+            with st.expander(f"{row['Marca']} - {row['Modello']} ({row.get('Memoria', '')}, {row.get('Colore', '')})"):
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    st.write(f"**Marca:** {row['Marca']}")
+                    st.write(f"**Modello:** {row['Modello']}")
+                    st.write(f"**Tipo:** {row['Tipo']}")
+                    if 'Memoria' in row:
+                        st.write(f"**Memoria:** {row['Memoria']}")
+                    if 'mm' in row:
+                        st.write(f"**Dimensioni:** {row['mm']}")
+                    if 'pollici' in row:
+                        st.write(f"**Dimensioni:** {row['pollici']}")
+                    if 'Colore' in row:
+                        st.write(f"**Colore:** {row['Colore']}")
+                    st.write(f"**Codice PIM:** {row['Codice_PIM']}")
+                
+                with col2:
+                    barcode_img = generate_barcode(str(row['Codice_PIM']))
+                    if barcode_img is not None:
+                        st.image(barcode_img, width=300)
+                        st.success("Codice a barre generato!")
+    
+    # Display service results
+    if has_service_results:
+        st.subheader(f"🔧 Servizi ({len(service_results)} trovati)")
+        for idx, row in service_results.iterrows():
+            with st.expander(f"{row['Categoria']} - {row['Servizio']} (€{row['Costo']})"):
+                col1, col2 = st.columns([1, 1])
+                
+                with col1:
+                    st.write(f"**Categoria:** {row['Categoria']}")
+                    st.write(f"**Sottocategoria:** {row['Sottocategoria']}")
+                    st.write(f"**Servizio:** {row['Servizio']}")
+                    st.write(f"**Costo:** €{row['Costo']}")
+                    st.write(f"**Codice:** {row['Codice']}")
+                
+                with col2:
+                    barcode_img = generate_barcode(str(row['Codice']))
+                    if barcode_img is not None:
+                        st.image(barcode_img, width=300)
+                        st.success("Codice a barre generato!")
 
 def show_services_categories_view(df):
     """Display service categories"""
