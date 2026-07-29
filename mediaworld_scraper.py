@@ -447,10 +447,6 @@ def scrape_category_products(brand, category):
                 if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
                     color_from_model = potential_color
             
-            # Remove color from model name (color should be in separate field only)
-            # Remove everything after the first comma (colors are always comma-separated)
-            model = re.sub(r',.*$', '', model).strip()
-            
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
@@ -464,19 +460,11 @@ def scrape_category_products(brand, category):
                 r',\s*Silver,\s*Connettività:\s*\w+\s*$',
                 r',\s*\w+,\s*Connettività:\s*\w+\s*$',
                 r',\s*Connettività:\s*No\s*$',
-                # Remove PANTONE colors and other specific color patterns (must be AFTER extraction)
-                r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
-                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
-                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                # Don't remove PANTONE colors here - they will be split by comma later
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after bundle removal
-            model = model.strip()
-            
-            # Also remove any remaining single-word colors at the end
-            single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
-            model = re.sub(single_color_pattern, '', model, flags=re.I)
             model = model.strip()
             
             color = extract_color(prod_soup, prod_url)
@@ -596,6 +584,11 @@ def scrape_category_products(brand, category):
             
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
+            
+            # FINAL CLEANUP: Remove color from model name (color should be in separate field only)
+            # Remove everything after the first comma (colors are always comma-separated)
+            if ',' in model:
+                model = model.split(',')[0].strip()
             
             # Build product dictionary with category-specific fields
             product_dict = {
@@ -1230,10 +1223,6 @@ def scrape_brand_only(brand):
                 if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
                     color_from_model = potential_color
             
-            # Remove color from model name (color should be in separate field only)
-            # Remove everything after the first comma (colors are always comma-separated)
-            model = re.sub(r',.*$', '', model).strip()
-            
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
@@ -1247,19 +1236,11 @@ def scrape_brand_only(brand):
                 r',\s*Silver,\s*Connettività:\s*\w+\s*$',
                 r',\s*\w+,\s*Connettività:\s*\w+\s*$',
                 r',\s*Connettività:\s*No\s*$',
-                # Remove PANTONE colors and other specific color patterns (must be AFTER extraction)
-                r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
-                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
-                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                # Don't remove PANTONE colors here - they will be split by comma later
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after bundle removal
-            model = model.strip()
-            
-            # Also remove any remaining single-word colors at the end
-            single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
-            model = re.sub(single_color_pattern, '', model, flags=re.I)
             model = model.strip()
             
             color = extract_color(prod_soup, prod_url)
@@ -1379,6 +1360,11 @@ def scrape_brand_only(brand):
             
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
+            
+            # FINAL CLEANUP: Remove color from model name (color should be in separate field only)
+            # Remove everything after the first comma (colors are always comma-separated)
+            if ',' in model:
+                model = model.split(',')[0].strip()
             
             # Build product dictionary with category-specific fields
             product_dict = {
