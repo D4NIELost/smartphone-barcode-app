@@ -448,9 +448,8 @@ def scrape_category_products(brand, category):
                     color_from_model = potential_color
             
             # Remove color from model name (color should be in separate field only)
-            # Simple approach: split by comma and take only the first part
-            if ',' in model:
-                model = model.split(',')[0].strip()
+            # Remove everything after the first comma (colors are always comma-separated)
+            model = re.sub(r',.*$', '', model).strip()
             
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
@@ -1232,9 +1231,8 @@ def scrape_brand_only(brand):
                     color_from_model = potential_color
             
             # Remove color from model name (color should be in separate field only)
-            # Simple approach: split by comma and take only the first part
-            if ',' in model:
-                model = model.split(',')[0].strip()
+            # Remove everything after the first comma (colors are always comma-separated)
+            model = re.sub(r',.*$', '', model).strip()
             
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
