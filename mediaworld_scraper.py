@@ -402,6 +402,9 @@ def scrape_category_products(brand, category):
                 continue
             
             # Clean model name - remove brand prefix if present
+            # Save original model name for color extraction before any cleaning
+            original_model = model
+            
             model = re.sub(r'^' + re.escape(brand) + r'\s*', '', model, flags=re.I)
             # Also remove brand name if it appears after type (e.g., "SMARTBAND SAMSUNG Galaxy FIT3")
             model = re.sub(r'\s+' + re.escape(brand) + r'\s+', ' ', model, flags=re.I)
@@ -431,21 +434,26 @@ def scrape_category_products(brand, category):
             model = re.sub(r'^\s*,\s*', '', model)  # Remove leading comma
             model = model.strip()
             
-            # Extract color from model name as fallback before removing it
-            color_from_model = extract_color_from_model(model)
+            # Extract color from ORIGINAL model name as fallback before removing it
+            color_from_model = extract_color_from_model(original_model)
             
-            # Extract PANTONE colors specifically before removing them
-            pantone_match = re.search(r',\s*PANTONE\s+(\S+(?:\s+\S+)*)\s*$', model, re.I)
+            # Extract PANTONE colors specifically from ORIGINAL model name before removing them
+            pantone_match = re.search(r',\s*PANTONE\s+(\S+(?:\s+\S+)*)\s*$', original_model, re.I)
             if pantone_match and not color_from_model:
                 color_from_model = pantone_match.group(1)
             
-            # Extract any other color-like patterns from the end of the model name
-            color_match = re.search(r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', model)
+            # Extract any other color-like patterns from the end of the ORIGINAL model name
+            color_match = re.search(r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', original_model)
             if color_match and not color_from_model:
                 potential_color = color_match.group(1)
                 # Only use it if it looks like a color (not a technical spec)
                 if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
                     color_from_model = potential_color
+            
+            # Split model name by comma to remove color (colors are always comma-separated at the end)
+            # Do this BEFORE any other cleaning to ensure the comma is still present
+            if ',' in model:
+                model = model.split(',')[0].strip()
             
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
@@ -584,11 +592,6 @@ def scrape_category_products(brand, category):
             
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
-            
-            # FINAL CLEANUP: Remove color from model name (color should be in separate field only)
-            # Remove everything after the first comma (colors are always comma-separated)
-            if ',' in model:
-                model = model.split(',')[0].strip()
             
             # Build product dictionary with category-specific fields
             product_dict = {
@@ -1178,6 +1181,9 @@ def scrape_brand_only(brand):
                 continue
             
             # Clean model name - remove brand prefix if present
+            # Save original model name for color extraction before any cleaning
+            original_model = model
+            
             model = re.sub(r'^' + re.escape(brand) + r'\s*', '', model, flags=re.I)
             # Also remove brand name if it appears after type (e.g., "SMARTBAND SAMSUNG Galaxy FIT3")
             model = re.sub(r'\s+' + re.escape(brand) + r'\s+', ' ', model, flags=re.I)
@@ -1207,21 +1213,26 @@ def scrape_brand_only(brand):
             model = re.sub(r'^\s*,\s*', '', model)  # Remove leading comma
             model = model.strip()
             
-            # Extract color from model name as fallback before removing it
-            color_from_model = extract_color_from_model(model)
+            # Extract color from ORIGINAL model name as fallback before removing it
+            color_from_model = extract_color_from_model(original_model)
             
-            # Extract PANTONE colors specifically before removing them
-            pantone_match = re.search(r',\s*PANTONE\s+(\S+(?:\s+\S+)*)\s*$', model, re.I)
+            # Extract PANTONE colors specifically from ORIGINAL model name before removing them
+            pantone_match = re.search(r',\s*PANTONE\s+(\S+(?:\s+\S+)*)\s*$', original_model, re.I)
             if pantone_match and not color_from_model:
                 color_from_model = pantone_match.group(1)
             
-            # Extract any other color-like patterns from the end of the model name
-            color_match = re.search(r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', model)
+            # Extract any other color-like patterns from the end of the ORIGINAL model name
+            color_match = re.search(r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', original_model)
             if color_match and not color_from_model:
                 potential_color = color_match.group(1)
                 # Only use it if it looks like a color (not a technical spec)
                 if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
                     color_from_model = potential_color
+            
+            # Split model name by comma to remove color (colors are always comma-separated at the end)
+            # Do this BEFORE any other cleaning to ensure the comma is still present
+            if ',' in model:
+                model = model.split(',')[0].strip()
             
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
@@ -1360,11 +1371,6 @@ def scrape_brand_only(brand):
             
             # Debug: print extracted values
             print(f"    Extracted - Model: {model[:50]}, Memory: {memory}, Color: {color}, Type: {product_type}")
-            
-            # FINAL CLEANUP: Remove color from model name (color should be in separate field only)
-            # Remove everything after the first comma (colors are always comma-separated)
-            if ',' in model:
-                model = model.split(',')[0].strip()
             
             # Build product dictionary with category-specific fields
             product_dict = {
