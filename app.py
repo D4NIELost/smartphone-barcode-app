@@ -5,6 +5,7 @@ from barcode.writer import ImageWriter
 from io import BytesIO
 from PIL import Image
 import os
+import streamlit.components.v1 as components
 
 # Configuration
 # PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
@@ -964,6 +965,45 @@ def main():
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
         <meta name="theme-color" content="#1f77b4">
     """, unsafe_allow_html=True)
+    
+    # JavaScript trick to override Streamlit's default icon
+    # Replace this URL with your actual hosted icon URL
+    ICON_URL = "https://raw.githubusercontent.com/D4NIELost/smartphone-barcode-app/main/images/app-icon.png"
+    
+    js_override_icon = f"""
+    <script>
+    // Override Streamlit's default icon
+    var links = window.parent.document.getElementsByTagName('link');
+    for (var i = 0; i < links.length; i++) {{
+        if (links[i].getAttribute('rel') === 'apple-touch-icon' || 
+            links[i].getAttribute('rel') === 'shortcut icon' ||
+            links[i].getAttribute('rel') === 'icon') {{
+            links[i].setAttribute('href', '{ICON_URL}');
+        }}
+    }}
+    
+    // Create new icon links if they don't exist
+    var newIcon192 = window.parent.document.createElement('link');
+    newIcon192.rel = 'apple-touch-icon';
+    newIcon192.setAttribute('sizes', '192x192');
+    newIcon192.href = '{ICON_URL}';
+    window.parent.document.head.appendChild(newIcon192);
+    
+    var newIcon512 = window.parent.document.createElement('link');
+    newIcon512.rel = 'apple-touch-icon';
+    newIcon512.setAttribute('sizes', '512x512');
+    newIcon512.href = '{ICON_URL}';
+    window.parent.document.head.appendChild(newIcon512);
+    
+    var newFavicon = window.parent.document.createElement('link');
+    newFavicon.rel = 'icon';
+    newFavicon.type = 'image/png';
+    newFavicon.href = '{ICON_URL}';
+    window.parent.document.head.appendChild(newFavicon);
+    </script>
+    """
+    
+    components.html(js_override_icon, height=0, width=0)
     
     # Route based on authentication
     if not st.session_state.authenticated:

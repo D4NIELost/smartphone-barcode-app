@@ -439,7 +439,20 @@ def scrape_category_products(brand, category):
             if pantone_match and not color_from_model:
                 color_from_model = pantone_match.group(1)
             
-            # Remove bundle text from model name FIRST (before color extraction)
+            # Extract any other color-like patterns from the end of the model name
+            color_match = re.search(r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', model)
+            if color_match and not color_from_model:
+                potential_color = color_match.group(1)
+                # Only use it if it looks like a color (not a technical spec)
+                if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
+                    color_from_model = potential_color
+            
+            # Remove color from model name (color should be in separate field only)
+            # Simple approach: split by comma and take only the first part
+            if ',' in model:
+                model = model.split(',')[0].strip()
+            
+            # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
                 r',\s*Magnetic Case \+ SUPERVOOC \d+W Power Adapter inclusi\s*$',
@@ -461,11 +474,6 @@ def scrape_category_products(brand, category):
                 model = re.sub(pattern, '', model, flags=re.I)
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after bundle removal
             model = model.strip()
-            
-            # Remove color from model name (color should be in separate field only)
-            # Simple approach: split by comma and take only the first part
-            if ',' in model:
-                model = model.split(',')[0].strip()
             
             # Also remove any remaining single-word colors at the end
             single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
@@ -1215,7 +1223,20 @@ def scrape_brand_only(brand):
             if pantone_match and not color_from_model:
                 color_from_model = pantone_match.group(1)
             
-            # Remove bundle text from model name FIRST (before color extraction)
+            # Extract any other color-like patterns from the end of the model name
+            color_match = re.search(r',\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$', model)
+            if color_match and not color_from_model:
+                potential_color = color_match.group(1)
+                # Only use it if it looks like a color (not a technical spec)
+                if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
+                    color_from_model = potential_color
+            
+            # Remove color from model name (color should be in separate field only)
+            # Simple approach: split by comma and take only the first part
+            if ',' in model:
+                model = model.split(',')[0].strip()
+            
+            # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
                 r',\s*Magnetic Case \+ SUPERVOOC \d+W Power Adapter inclusi\s*$',
@@ -1237,11 +1258,6 @@ def scrape_brand_only(brand):
                 model = re.sub(pattern, '', model, flags=re.I)
             model = re.sub(r'\s*,\s*$', '', model)  # Remove trailing comma after bundle removal
             model = model.strip()
-            
-            # Remove color from model name (color should be in separate field only)
-            # Simple approach: split by comma and take only the first part
-            if ',' in model:
-                model = model.split(',')[0].strip()
             
             # Also remove any remaining single-word colors at the end
             single_color_pattern = r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Cream|Ivory|Lavender|Rose|Navy|Cobalt|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Graphite|Mint|Shadow|Jetblack|Icyblue)\s*$'
