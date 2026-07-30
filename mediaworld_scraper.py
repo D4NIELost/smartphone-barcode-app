@@ -450,11 +450,6 @@ def scrape_category_products(brand, category):
                 if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
                     color_from_model = potential_color
             
-            # Split model name by comma to remove color (colors are always comma-separated at the end)
-            # Do this BEFORE any other cleaning to ensure the comma is still present
-            if ',' in model:
-                model = model.split(',')[0].strip()
-            
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
@@ -468,7 +463,12 @@ def scrape_category_products(brand, category):
                 r',\s*Silver,\s*Connettività:\s*\w+\s*$',
                 r',\s*\w+,\s*Connettività:\s*\w+\s*$',
                 r',\s*Connettività:\s*No\s*$',
-                # Don't remove PANTONE colors here - they will be split by comma later
+                # Remove PANTONE colors and other specific color patterns (must be AFTER extraction)
+                r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                # Remove specific color names at the end
+                r',\s*(Bronze Green|Lily Pad|Arabesque|Denim Blue|Forest Green|Scarab|Midnight Blue|Hematite|Sporting Green|Lily White|Blackened Blue|Carbon|Dark Shadow|Blue Jewel|Poinciana|Grisaille)\s*$',
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
@@ -1229,11 +1229,6 @@ def scrape_brand_only(brand):
                 if len(potential_color) < 30 and not any(char.isdigit() for char in potential_color):
                     color_from_model = potential_color
             
-            # Split model name by comma to remove color (colors are always comma-separated at the end)
-            # Do this BEFORE any other cleaning to ensure the comma is still present
-            if ',' in model:
-                model = model.split(',')[0].strip()
-            
             # Remove bundle text from model name AFTER color extraction
             bundle_patterns = [
                 r',\s*cover e caricabatteria \d+W inclusi\s*$',
@@ -1247,7 +1242,12 @@ def scrape_brand_only(brand):
                 r',\s*Silver,\s*Connettività:\s*\w+\s*$',
                 r',\s*\w+,\s*Connettività:\s*\w+\s*$',
                 r',\s*Connettività:\s*No\s*$',
-                # Don't remove PANTONE colors here - they will be split by comma later
+                # Remove PANTONE colors and other specific color patterns (must be AFTER extraction)
+                r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
+                # Remove specific color names at the end
+                r',\s*(Bronze Green|Lily Pad|Arabesque|Denim Blue|Forest Green|Scarab|Midnight Blue|Hematite|Sporting Green|Lily White|Blackened Blue|Carbon|Dark Shadow|Blue Jewel|Poinciana|Grisaille)\s*$',
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)

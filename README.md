@@ -1,18 +1,20 @@
-# 📱 App Barcode Smartphone
+# 📱 App Barcode Dispositivi
 
-Web app ottimizzata per smartphone per la ricerca e generazione di codici a barre di telefoni cellulari. Realizzata con Streamlit, permette ai dipendenti di un negozio di elettronica di cercare rapidamente i modelli di smartphone e generare codici a barre scansionabili con tablet aziendali.
+Web app ottimizzata per smartphone per la ricerca e generazione di codici a barre di dispositivi elettronici. Realizzata con Streamlit, permette ai dipendenti di un negozio di elettronica di cercare rapidamente smartphone, smartwatch, tablet, notebook e servizi, generando codici a barre ITF-25 scansionabili con tablet aziendali.
 
 ## 🔒 Sicurezza
 
-L'app è protetta da password. All'apertura viene richiesto di inserire una password condivisa per accedere alle funzionalità principali.
+L'app può essere protetta da password. Attualmente l'autenticazione è disabilitata (modificabile nel file `app.py`).
 
 ## ✨ Funzionalità
 
-- **Protezione con password**: Accesso riservato ai dipendenti autorizzati
-- **Ricerca rapida**: Barra di ricerca reattiva per trovare smartphone per marca, modello o codice articolo
-- **Generazione codici a barre**: Creazione automatica di codici a barre Code128 ottimizzati per la scansione
+- **Protezione con password** (opzionale): Accesso riservato ai dipendenti autorizzati
+- **Catalogo completo**: Smartphone, Smartwatch, Tablet, Notebook e Servizi
+- **Ricerca rapida**: Barra di ricerca reattiva per trovare prodotti per marca, modello o codice PIM
+- **Generazione codici a barre**: Creazione automatica di codici a barre ITF-25 ottimizzati per la scansione
 - **Interfaccia mobile-first**: Design ottimizzato per smartphone e tablet
-- **Database CSV**: Dati caricati da file CSV locale (facilmente espandibile)
+- **Database CSV**: Dati caricati da file CSV nella cartella `databases/` (facilmente espandibile)
+- **Navigazione gerarchica**: Marchio → Categoria → Modello → Specifiche → Colore → Barcode
 
 ## 📋 Requisiti
 
@@ -28,21 +30,21 @@ L'app è protetta da password. All'apertura viene richiesto di inserire una pass
    pip install -r requirements.txt
    ```
 
-3. **Configura la password**:
+3. **Configura la password** (opzionale):
    - Apri il file `app.py`
-   - Modifica la variabile `PASSWORD` alla riga 8 con la tua password desiderata:
+   - Modifica la variabile `PASSWORD` alla riga 11:
    ```python
-   PASSWORD = "tua_password_sicura"
+   PASSWORD = "tua_password_sicura"  # Imposta la password desiderata
+   # PASSWORD = None  # Disabilita l'autenticazione
    ```
 
-4. **Prepara il database**:
-   - Il file `database_telefoni.csv` contiene dati di esempio
-   - Puoi modificarlo aggiungendo i tuoi dati seguendo il formato:
-   ```csv
-   Marca,Modello,Codice_Articolo
-   Samsung,Galaxy S24 Ultra,8806094751234
-   Apple,iPhone 15 Pro,1942537890123
-   ```
+4. **Prepara i database**:
+   - I file CSV sono nella cartella `databases/`
+   - `database_smartphone.csv`: Database smartphone (colonne: Marca, Tipo, Modello, Memoria, Colore, Codice_PIM)
+   - `database_smartwatch.csv`: Database smartwatch (colonne: Marca, Tipo, Modello, mm, Colore, Codice_PIM)
+   - `database_tablet.csv`: Database tablet (colonne: Marca, Tipo, Modello, Memoria, Codice_PIM)
+   - `database_notebook.csv`: Database notebook (colonne: Marca, Tipo, Modello, Memoria, pollici, Codice_PIM)
+   - `database_servizi.csv`: Database servizi (colonne: Categoria, Sottocategoria, Servizio, Codice, Costo)
 
 ## 🎯 Utilizzo
 
@@ -54,26 +56,40 @@ L'app è protetta da password. All'apertura viene richiesto di inserire una pass
 2. **Apri il browser**:
    - L'app sarà disponibile all'indirizzo: `http://localhost:8501`
 
-3. **Accedi all'app**:
+3. **Accedi all'app** (se password abilitata):
    - Inserisci la password configurata
    - Clicca su "Accedi"
 
-4. **Cerca smartphone**:
-   - Digita il nome del telefono nella barra di ricerca (es. "S24 Ultra", "iPhone 15 Pro")
+4. **Naviga nel catalogo**:
+   - **Dispositivi**: Seleziona Marchio → Categoria (Smartphone/Smartwatch/Tablet/Notebook) → Modello → Specifiche → Colore
+   - **Servizi**: Seleziona Categoria → Sottocategoria → Servizio
+
+5. **Ricerca rapida**:
+   - Usa la barra di ricerca per trovare prodotti per marca, modello o codice PIM
    - I risultati appariranno in tempo reale
 
-5. **Genera codice a barre**:
-   - Seleziona un telefono dai risultati
-   - Clicca su "Genera Codice a Barre"
-   - Il codice a barre apparirà grande e nitido per facilitare la scansione
+6. **Genera codice a barre**:
+   - Seleziona un prodotto/servizio
+   - Il codice a barre ITF-25 verrà generato automaticamente con il codice PIM
 
 ## 📁 Struttura del Progetto
 
 ```
 smartphone-barcode-app/
 ├── app.py                      # File principale dell'applicazione Streamlit
-├── database_telefoni.csv       # Database CSV con i dati degli smartphone
+├── databases/                  # Cartella con i database CSV
+│   ├── database_smartphone.csv
+│   ├── database_smartwatch.csv
+│   ├── database_tablet.csv
+│   ├── database_notebook.csv
+│   └── database_servizi.csv
+├── images/                     # Cartella per le immagini (loghi marchi, colori, modelli)
+│   ├── brands/
+│   ├── colors/
+│   └── models/
 ├── requirements.txt            # Dipendenze Python
+├── mediaworld_scraper.py       # Script per scraping prodotti Mediaworld
+├── mediaworld_products.csv     # Output dello scraper
 └── README.md                   # Questo file
 ```
 
@@ -81,22 +97,40 @@ smartphone-barcode-app/
 
 ### Modificare la password
 
-Modifica la variabile `PASSWORD` nel file `app.py` (riga 8):
+Modifica la variabile `PASSWORD` nel file `app.py` (riga 11):
 
 ```python
-PASSWORD = "nuova_password"
+PASSWORD = "nuova_password"  # Abilita autenticazione
+# PASSWORD = None  # Disabilita autenticazione
 ```
 
 ### Aggiungere/Modificare dati
 
-Modifica il file `database_telefoni.csv` aggiungendo o modificando righe. Assicurati di mantenere le colonne:
-- `Marca`: Es. Samsung, Apple, Google
-- `Modello`: Es. Galaxy S24 Ultra, iPhone 15 Pro
-- `Codice_Articolo`: Codice EAN o codice interno (deve essere compatibile con Code128)
+Modifica i file CSV nella cartella `databases/` aggiungendo o modificando righe:
+
+**Smartphone** (`database_smartphone.csv`):
+- Colonne: Marca, Tipo, Modello, Memoria, Colore, Codice_PIM
+- Esempio: Samsung,Smartphone,Galaxy S24 Ultra,256GB,Black,411110
+
+**Smartwatch** (`database_smartwatch.csv`):
+- Colonne: Marca, Tipo, Modello, mm, Colore, Codice_PIM
+- Esempio: Apple,Smartwatch,Watch Series 9,45mm,Black,411118
+
+**Tablet** (`database_tablet.csv`):
+- Colonne: Marca, Tipo, Modello, Memoria, Codice_PIM
+- Esempio: Apple,Tablet,iPad Air 128GB,128GB,411112
+
+**Notebook** (`database_notebook.csv`):
+- Colonne: Marca, Tipo, Modello, Memoria, pollici, Codice_PIM
+- Esempio: Apple,Notebook,MacBook Air 13,256GB,13.6,431292
+
+**Servizi** (`database_servizi.csv`):
+- Colonne: Categoria, Sottocategoria, Servizio, Codice, Costo
+- Esempio: Servizi Generali,Computer,PRIMO AVVIO COMPUTER,433214,19.99
 
 ### Configurazione codice a barre
 
-Puoi modificare le impostazioni del codice a barre nella funzione `generate_barcode()` nel file `app.py` (righe 30-38):
+Puoi modificare le impostazioni del codice a barre ITF-25 nella funzione `generate_barcode()` nel file `app.py` (righe 127-133):
 
 ```python
 options = {
@@ -121,28 +155,34 @@ Poi accedi dall'indirizzo IP del computer che ospita l'app.
 ## 📱 Note sull'Interfaccia
 
 L'app è ottimizzata per:
-- **Smartphone**: Input touch-friendly, font leggibili
+- **Smartphone**: Input touch-friendly, font leggibili, navigazione a pulsanti
 - **Tablet**: Codici a barre grandi e ad alto contrasto per facile scansione
 - **Desktop**: Interfaccia pulita e intuitiva
 
 ## 🔒 Note sulla Sicurezza
 
-- La password è hardcoded nel file `app.py`. Per ambienti di produzione, considera l'uso di variabili d'ambiente o un sistema di autenticazione più robusto.
+- La password è configurabile nel file `app.py`. Per ambienti di produzione, considera l'uso di variabili d'ambiente o un sistema di autenticazione più robusto.
 - L'app non cripta i dati in transito. Per uso in produzione, considera l'uso di HTTPS.
 
 ## 🐛 Risoluzione Problemi
 
 ### Il database non viene caricato
-- Verifica che il file `database_telefoni.csv` sia nella stessa directory di `app.py`
-- Controlla che il CSV abbia le colonne corrette: `Marca`, `Modello`, `Codice_Articolo`
+- Verifica che i file CSV siano nella cartella `databases/`
+- Controlla che i CSV abbiano le colonne corrette per ogni categoria
+- Assicurati che i file siano in formato UTF-8
 
 ### Il codice a barre non viene generato
-- Verifica che il `Codice_Articolo` sia compatibile con il formato Code128 (caratteri alfanumerici standard)
+- Verifica che il `Codice_PIM` sia un valore numerico valido per ITF-25
+- Il codice PIM viene convertito rimuovendo punti e virgole prima della generazione
 - Controlla i log di errore nell'interfaccia per dettagli specifici
 
 ### L'app è lenta
-- Riduci il numero di righe nel CSV se contiene migliaia di prodotti
+- Riduci il numero di righe nei CSV se contengono migliaia di prodotti
 - Considera l'uso di un database più performante per grandi volumi di dati
+
+### I colori non vengono visualizzati correttamente
+- I colori sono mappati nel file `app.py` (funzione `show_colors_view`)
+- Per aggiungere nuovi colori, modifica il dizionario `color_map` nel codice
 
 ## 📄 Licenza
 

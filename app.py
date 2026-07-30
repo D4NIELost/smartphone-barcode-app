@@ -663,8 +663,6 @@ def show_colors_view(df):
         'twilight black': '#1A1A2E',
         'aurora blue': '#87CEFA',
         'dusk black': '#2F2F2F',
-        'magnetic case inclusa': '#CCCCCC',  # Fallback for non-color descriptions
-        # Samsung specific colors
         'navy': '#000080',
         'mint': '#98FF98',
         'jetblack': '#1A1A1A',
@@ -689,6 +687,35 @@ def show_colors_view(df):
         'graphite': '#383838',
         'pink gold': '#E6C8C8',
         'titanium silver': '#C0C0C0',
+        # OPPO specific colors
+        'crystal blue': '#E0FFFF',
+        'crystal black': '#1A1A1A',
+        'black purple': '#4B0082',
+        'ice blue': '#87CEEB',
+        'aurora gold': '#fdd4be',
+        # Motorola specific colors
+        'denim blue': '#1560BD',
+        'forest green': '#228B22',
+        'arabesque': '#8B4513',
+        'viola': '#EE82EE',
+        'oro': '#FFD700',
+        'bronze green': '#5C7A68',
+        'lily pad': '#4A7C59',
+        'scarab': '#1A4D2E',
+        'pantone corsair': '#006994',
+        'pantone regatta': '#005F7F',
+        'pantone black oyster': '#1C1C1C',
+        'pantone gray mist': '#A9A9A9',
+        'pantone carbon': '#36454F',
+        'pantone martini olive': '#556B2F',
+        'pantone hematite': '#2F2F2F',
+        'pantone sporting green': '#2E8B57',
+        'pantone mountain view': '#4A5D23',
+        'pantone blackened blue': '#1A237E',
+        'pantone lily white': '#F8F8FF',
+        # Italian color variants
+        'blu': '#0000FF',
+        'lavanda': '#E6E6FA',
     }
     
     # Linear view for mobile
