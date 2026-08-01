@@ -19,7 +19,7 @@ HEADERS = {
 # Brands and their MediaWorld URL paths
 BRANDS = {
     "Samsung": "it/brand/samsung",
-    "Google": "it/brand/google",
+    "Google": "it/search.html?query=google%20pixel&category=CAT_IT_MM_10//CAT_IT_MM_1001&marketplace=MediaWorld",
     "Xiaomi": "it/brand/xiaomi",
     "OPPO": "it/brand/oppo",
     "Honor": "it/brand/honor",
@@ -31,8 +31,8 @@ BRANDS = {
 # Use None for brands that need filter-based scraping (no specific category URL)
 CATEGORIES = {
     "Samsung": ["smartphone", "smartwatch", "tablet", "notebook"],
-    "Google": None,  # Will use filter-based scraping
-    "Xiaomi": ["smartphone"],
+    "Google": ["search"],  # Uses direct search URL for Pixel
+    "Xiaomi": ["smartphone", "smartwatch", "smartband", "tablet"],  # smartband will be treated as smartwatch
     "OPPO": ["smartphone"],
     "Honor": ["smartphone", "wearables", "tablet"],
     "ZTE": ["blade", "nubia"],
@@ -189,7 +189,7 @@ def determine_product_type(model, category):
     model_lower = model.lower()
     if 'smartwatch' in model_lower or 'smartband' in model_lower or 'anello' in model_lower or 'ring' in model_lower:
         return 'Smartwatch'
-    elif category == 'smartwatch' or category == 'wearables':
+    elif category == 'smartwatch' or category == 'wearables' or category == 'smartband':
         return 'Smartwatch'
     elif category == 'tablet':
         return 'Tablet'
@@ -200,7 +200,11 @@ def determine_product_type(model, category):
 
 def scrape_category_products(brand, category):
     """Scrape all products for a brand and category with 'Show more' button support"""
-    base_url = f"{BASE_URL}/{BRANDS[brand]}/{category}"
+    # Special handling for Google: use the full search URL directly
+    if brand == "Google" and category == "search":
+        base_url = f"{BASE_URL}/{BRANDS[brand]}"
+    else:
+        base_url = f"{BASE_URL}/{BRANDS[brand]}/{category}"
     products = []
     seen_urls = set()
     
@@ -397,7 +401,12 @@ def scrape_category_products(brand, category):
             model = title.get_text(strip=True) if title else "Unknown"
             
             # Verify product is actually from the correct brand (check title contains brand name)
-            if brand.lower() not in model.lower():
+            # Special case for Google: also accept products with "Pixel" in the name
+            brand_match = brand.lower() in model.lower()
+            if brand.lower() == 'google':
+                brand_match = brand_match or 'pixel' in model.lower()
+            
+            if not brand_match:
                 print(f"    Skipping: Product '{model}' does not match brand '{brand}'")
                 continue
             
@@ -408,6 +417,15 @@ def scrape_category_products(brand, category):
             model = re.sub(r'^' + re.escape(brand) + r'\s*', '', model, flags=re.I)
             # Also remove brand name if it appears after type (e.g., "SMARTBAND SAMSUNG Galaxy FIT3")
             model = re.sub(r'\s+' + re.escape(brand) + r'\s+', ' ', model, flags=re.I)
+            model = model.strip()
+            
+            # Remove simple colors from model name (Black, White, Green, Grey, etc.)
+            model = re.sub(r',\s*(Black|White|Green|Grey|Gray|Blue|Red|Yellow|Orange|Purple|Pink|Silver|Gold|Brown)\s*$', '', model, flags=re.I)
+            model = model.strip()
+            
+            # Remove memory patterns specific to Xiaomi (e.g., "12+512", "4+128" without GB unit)
+            # These appear in model names like "17 12+512", "Redmi 15C 4+128"
+            model = re.sub(r'\s*\d+\+\d+\s*', '', model, flags=re.I)
             model = model.strip()
             
             # Remove "Tablet" prefix from model name
@@ -814,7 +832,13 @@ def scrape_with_filters(brand):
             title = prod_soup.find('h1')
             model = title.get_text(strip=True) if title else "Unknown"
             
-            if brand.lower() not in model.lower():
+            # Verify product is actually from the correct brand (check title contains brand name)
+            # Special case for Google: also accept products with "Pixel" in the name
+            brand_match = brand.lower() in model.lower()
+            if brand.lower() == 'google':
+                brand_match = brand_match or 'pixel' in model.lower()
+            
+            if not brand_match:
                 print(f"    Skipping: Product '{model}' does not match brand '{brand}'")
                 continue
             
@@ -836,6 +860,10 @@ def scrape_with_filters(brand):
                 continue
             
             model = re.sub(r'^' + re.escape(brand) + r'\s*', '', model, flags=re.I)
+            model = model.strip()
+            
+            # Remove simple colors from model name (Black, White, Green, Grey, etc.)
+            model = re.sub(r',\s*(Black|White|Green|Grey|Gray|Blue|Red|Yellow|Orange|Purple|Pink|Silver|Gold|Brown)\s*$', '', model, flags=re.I)
             model = model.strip()
             
             model = re.sub(r'\s*\d+/\d+\s*(GB|TB|MB)\s*', '', model, flags=re.I)
@@ -1011,6 +1039,7 @@ def scrape_brand_only(brand):
     base_url = f"{BASE_URL}/{BRANDS[brand]}"
     products = []
     seen_urls = set()
+    category = 'smartphone'  # Default category for fallback
     
     # Use Selenium to handle "Show more" button
     chrome_options = Options()
@@ -1187,6 +1216,15 @@ def scrape_brand_only(brand):
             model = re.sub(r'^' + re.escape(brand) + r'\s*', '', model, flags=re.I)
             # Also remove brand name if it appears after type (e.g., "SMARTBAND SAMSUNG Galaxy FIT3")
             model = re.sub(r'\s+' + re.escape(brand) + r'\s+', ' ', model, flags=re.I)
+            model = model.strip()
+            
+            # Remove simple colors from model name (Black, White, Green, Grey, etc.)
+            model = re.sub(r',\s*(Black|White|Green|Grey|Gray|Blue|Red|Yellow|Orange|Purple|Pink|Silver|Gold|Brown)\s*$', '', model, flags=re.I)
+            model = model.strip()
+            
+            # Remove memory patterns specific to Xiaomi (e.g., "12+512", "4+128" without GB unit)
+            # These appear in model names like "17 12+512", "Redmi 15C 4+128"
+            model = re.sub(r'\s*\d+\+\d+\s*', '', model, flags=re.I)
             model = model.strip()
             
             # Remove "Tablet" prefix from model name

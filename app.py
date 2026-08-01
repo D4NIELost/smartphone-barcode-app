@@ -716,6 +716,16 @@ def show_colors_view(df):
         # Italian color variants
         'blu': '#0000FF',
         'lavanda': '#E6E6FA',
+        # Google Pixel specific colors
+        'nero ossidiana': '#0B0B0B',
+        'viola glicine': '#CCCCFF',
+        'blu indaco': '#6495ED',
+        'verde cedro': '#ADFF2F',
+        'viola lavanda': '#9370DB',
+        'grigio nebbia': '#E0E6E9',
+        'green': '#C1E1C1',
+        'forest green': '#3A4D39',
+        'dark grey': '#4F4F4F',
     }
     
     # Linear view for mobile
