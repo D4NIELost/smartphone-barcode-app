@@ -252,10 +252,11 @@ def main_app():
             reset_all_state()
             st.rerun()
     with col3:
-        if st.button("🚪 Logout", width='stretch'):
-            st.session_state.authenticated = False
-            reset_all_state()
-            st.rerun()
+        if PASSWORD is not None:  # Show logout button only if password is enabled
+            if st.button("🚪 Logout", width='stretch'):
+                st.session_state.authenticated = False
+                reset_all_state()
+                st.rerun()
 
 def reset_all_state():
     """Reset all session state variables"""
