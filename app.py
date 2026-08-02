@@ -726,6 +726,13 @@ def show_colors_view(df):
         'green': '#C1E1C1',
         'forest green': '#3A4D39',
         'dark grey': '#4F4F4F',
+        # Xiaomi specific colors
+        'glacier blue': '#87CEEB',
+        'titanio': '#A9A9A9',
+        'starlit green': '#4A6B5C',  # Dark teal/green with starlit effect
+        'blu': '#0000FF',
+        'viola': '#EE82EE',
+        'violet': '#8B7B8B',  # 17T Pro violet - muted purple/plum
     }
     
     # Linear view for mobile
