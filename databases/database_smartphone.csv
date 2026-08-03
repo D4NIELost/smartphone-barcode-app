@@ -3,6 +3,9 @@ Samsung,Smartphone,Galaxy A16,128GB,Black,411110
 Samsung,Smartphone,Galaxy A16,128GB,Gray,411118
 Samsung,Smartphone,Galaxy A16,128GB,Light Green,411112
 Samsung,Smartphone,Galaxy A16,128GB,Black Blue,431292
+Samsung,Smartphone,Galaxy A17 5G,128GB,Black,498231
+Samsung,Smartphone,Galaxy A17 5G,128GB,Gray,498237
+Samsung,Smartphone,Galaxy A17 5G,128GB,Blu,498240
 Samsung,Smartphone,Galaxy A27 5G,128GB,Black,586061
 Samsung,Smartphone,Galaxy A27 5G,128GB,BLUE,586074
 Samsung,Smartphone,Galaxy A27 5G,128GB,PINK,586072
@@ -30,6 +33,7 @@ Samsung,Smartphone,Galaxy S25,256GB,Icyblue,412439
 Samsung,Smartphone,Galaxy S25,256GB,Mint,412442
 Samsung,Smartphone,Galaxy S25,256GB,Navy,412446
 Samsung,Smartphone,Galaxy S25,256GB,Silver Shadow,412449
+Samsung,Smartphone,Galaxy S25 Ultra,256GB,Titanium Black,412318
 Samsung,Smartphone,Galaxy S25 Ultra,256GB,Titanium Gray,412412
 Samsung,Smartphone,Galaxy S25 Ultra,256GB,Titanium Silverblue,412393
 Samsung,Smartphone,Galaxy S25 Ultra,256GB,Titanium Whitesilver,412422
@@ -52,15 +56,16 @@ Samsung,Smartphone,Galaxy S26 Ultra,1TB GB,Black,564038
 Samsung,Smartphone,Galaxy S26 Ultra,1TB GB,PURPLE,564026
 Samsung,Smartphone,Galaxy S26 Ultra,1TB GB,Sky Blue,564034
 Samsung,Smartphone,Galaxy S26 Ultra,1TB GB,White,564022
-Samsung,Smartphone,Galaxy S26 Ultra,256GB,Black,564035
-Samsung,Smartphone,Galaxy S26 Ultra,256GB,Cobalt Violet,564023
-Samsung,Smartphone,Galaxy S26 Ultra,256GB,Sky Blue,564027
-Samsung,Smartphone,Galaxy S26 Ultra,256GB,White,564017
-Samsung,Smartphone,Galaxy S26 Ultra,512GB,Black,564036
-Samsung,Smartphone,Galaxy S26 Ultra,512GB,Cobalt Violet,564025
-Samsung,Smartphone,Galaxy S26 Ultra,512GB,Sky Blue,564033
-Samsung,Smartphone,Galaxy S26 Ultra,512GB,White,564018
-Samsung,Smartphone,Galaxy Z Flip7 FE,128GB,White,457274
+Samsung,Smartphone,Galaxy S26 Ultra,256 GB,Black,564035
+Samsung,Smartphone,Galaxy S26 Ultra,256 GB,Cobalt Violet,564023
+Samsung,Smartphone,Galaxy S26 Ultra,256 GB,Sky Blue,564027
+Samsung,Smartphone,Galaxy S26 Ultra,256 GB,White,564017
+Samsung,Smartphone,Galaxy S26 Ultra,512 GB,Black,564036
+Samsung,Smartphone,Galaxy S26 Ultra,512 GB,Cobalt Violet,564025
+Samsung,Smartphone,Galaxy S26 Ultra,512 GB,Sky Blue,564033
+Samsung,Smartphone,Galaxy S26 Ultra,512 GB,White,564018
+Samsung,Smartphone,Galaxy Z Flip7 FE,128 GB,White,457274
+Samsung,Smartphone,Galaxy Z Flip7 FE,128 GB,Black,457271
 Samsung,Smartphone,Galaxy Z Flip8,256GB,Graphite,593090
 Samsung,Smartphone,Galaxy Z Flip8,256GB,Cream,593088
 Samsung,Smartphone,Galaxy Z Flip8,256GB,Pink,593092
@@ -113,6 +118,86 @@ OPPO,Smartphone,Find X9 Ultra 5G,512 GB,Canyon Orange,580384
 OPPO,Smartphone,Find X9 Ultra 5G,512 GB,Tundra Umber,580383
 OPPO,Smartphone,Find X9 Ultra 5G Box,512 GB,Orange,580375
 OPPO,Smartphone,Find X9 Ultra 5G Box,512 GB,Tundra Umber,580374
+Xiaomi,Smartphone,Redmi A7 Pro,64 GB,Black,576413
+Xiaomi,Smartphone,Redmi A7 Pro,64 GB,BLUE,576415
+Xiaomi,Smartphone,Redmi A7 Pro,128 GB,Black,576519
+Xiaomi,Smartphone,Redmi A7 Pro,128 GB,BLUE,576520
+Xiaomi,Smartphone,Redmi A7 Pro,128 GB,GREEN,576522
+Xiaomi,Smartphone,Redmi 15C,128 GB,Black,467135
+Xiaomi,Smartphone,Redmi 15C,128 GB,ORANGE,467137
+Xiaomi,Smartphone,Redmi 15C,128 GB,BLUE,467138
+Xiaomi,Smartphone,Redmi 15C,256 GB,Black,467151
+Xiaomi,Smartphone,Redmi 15C,256 GB,GREEN,495999
+Xiaomi,Smartphone,Redmi 15C,256 GB,ORANGE,496008
+Xiaomi,Smartphone,Redmi 15C,256 GB,BLUE,496014
+Xiaomi,Smartphone,Redmi 17,128 GB,Black,595175
+Xiaomi,Smartphone,Redmi 17,128 GB,GREEN,595186
+Xiaomi,Smartphone,Redmi 17,128 GB,BLUE,595184
+Xiaomi,Smartphone,Redmi 17,256 GB,Black,595189
+Xiaomi,Smartphone,Redmi 17,256 GB,BLUE,595190
+Xiaomi,Smartphone,Redmi 17,256 GB,GREEN,595192
+Xiaomi,Smartphone,Redmi Note 15,128 GB,Black,563288
+Xiaomi,Smartphone,Redmi Note 15,128 GB,Glacier Blue,563385
+Xiaomi,Smartphone,Redmi Note 15,256 GB,Black,557247
+Xiaomi,Smartphone,Redmi Note 15,256 GB,Forest Green,557254
+Xiaomi,Smartphone,Redmi Note 15 5G,256 GB,Black,557278
+Xiaomi,Smartphone,Redmi Note 15 5G,256 GB,PURPLE,557285
+Xiaomi,Smartphone,Redmi Note 15 5G,512 GB,Black,563382
+Xiaomi,Smartphone,Redmi Note 15 5G,512 GB,PURPLE,564810
+Xiaomi,Smartphone,Redmi Note 15 5G,512 GB,Glacier Blue,564805
+Xiaomi,Smartphone,Redmi Note 15 Pro,256 GB,Black,557260
+Xiaomi,Smartphone,Redmi Note 15 Pro,256 GB,Glacier Blue,557266
+Xiaomi,Smartphone,Redmi Note 15 Pro,256 GB,TITANIO,557262
+Xiaomi,Smartphone,Redmi Note 15 Pro 5G,256 GB,BLACK,557269
+Xiaomi,Smartphone,Redmi Note 15 Pro 5G,512 GB,BLACK,563254
+Xiaomi,Smartphone,Redmi Note 15 Pro+ 5G,256 GB,BLACK,557274
+Xiaomi,Smartphone,17,512 GB,Ice Blue,565472
+Xiaomi,Smartphone,17,512 GB,Black,565448
+Xiaomi,Smartphone,17T,256 GB,Black,582785
+Xiaomi,Smartphone,17T,256 GB,Blu,582786
+Xiaomi,Smartphone,17T,256 GB,Viola,582787
+Xiaomi,Smartphone,17T,512 GB,Black,582797
+Xiaomi,Smartphone,17T,512 GB,Blu,582788
+Xiaomi,Smartphone,17T,512 GB,Viola,582799
+Xiaomi,Smartphone,17T Pro,512 GB,Black,582767
+Xiaomi,Smartphone,17T Pro,512 GB,Blu,582772
+Xiaomi,Smartphone,17T Pro,512 GB,Violet,582757
+Xiaomi,Smartphone,17 Ultra,512 GB,Black,565475
+Xiaomi,Smartphone,17 Ultra,512 GB,Starlit Green,565476
+Honor,Smartphone,X5c Plus,128 GB,Black,556863
+Honor,Smartphone,X5c Plus,256 GB,Black,530364
+Honor,Smartphone,X5c Plus,256 GB,CYAN,530367
+Honor,Smartphone,400 Smart,128 GB,GOLD,521210
+Honor,Smartphone,400 Smart,128 GB,Black,521209
+Honor,Smartphone,400 Smart,8+256GB,Black,592000
+Honor,Smartphone,400 Smart,8+256GB,GOLD,592001
+Honor,Smartphone,400 Smart + cover + Choice X7 Lite,256 GB,GOLD,521216
+Honor,Smartphone,400 Smart + cover + Choice X7 Lite,256 GB,Black,521214
+Honor,Smartphone,400,512 GB,SILVER,559982
+Honor,Smartphone,600 Smart,128 GB,Black,590563
+Honor,Smartphone,600 Smart,128 GB,SILVER,590565
+Honor,Smartphone,600 Smart,256 GB,Black,590573
+Honor,Smartphone,600 Smart,256 GB,SILVER,590575
+Honor,Smartphone,600 Lite + WATCH 2i,256 GB,Black,574056
+Honor,Smartphone,600 Lite + WATCH 2i,256 GB,GREY,574062
+Honor,Smartphone,600 Lite + WATCH 2i,256 GB,GREEN,574064
+Honor,Smartphone,600 + WATCH 2i,256 GB,GOLD,578661
+Honor,Smartphone,600 + WATCH 2i,256 GB,ORANGE,578662
+Honor,Smartphone,600 + WATCH 2i,256 GB,Black,578659
+Honor,Smartphone,600 + WATCH 2i,512 GB,Black,578668
+Honor,Smartphone,600 + WATCH 2i,512 GB,GOLD,578669
+Honor,Smartphone,600 + WATCH 2i,512 GB,ORANGE,578671
+Honor,Smartphone,600 Pro,12+512GB,GOLD,578680
+Honor,Smartphone,600 Pro,12+512GB,Nero,578677
+Honor,Smartphone,Magic 6 Lite,512 GB,GREEN,399624
+Honor,Smartphone,Magic 8 Lite + cover + Choice X7 Lite Earbuds,256 GB,Forest Green,559754
+Honor,Smartphone,Magic 8 Lite + cover + Choice X7 Lite Earbuds,256 GB,Midnight Black,559753
+Honor,Smartphone,Magic 8 Lite + cover + Super Charge 66W,512 GB,Forest Green,559759
+Honor,Smartphone,Magic 8 Lite + cover + Super Charge 66W,512 GB,Midnight Black,559758
+Honor,Smartphone,Magic V,16+512GB,GOLD,498441
+Honor,Smartphone,Magic V,16+512GB,Black,498440
+Honor,Smartphone,Magic V,16+512 GB,GOLD,589416
+Honor,Smartphone,Magic V,16+512 GB,Black,589408
 Motorola,Smartphone,Moto E15 4G,2+64GB,Lavanda,552227
 Motorola,Smartphone,Moto G05,128 GB,RED,425247
 Motorola,Smartphone,Moto G05,128 GB,GREEN,425245
@@ -173,49 +258,3 @@ ZTE,Smartphone,NUBIA AIR,256 GB,Black,530222
 ZTE,Smartphone,nubia Air Pro,512 GB,Black,577858
 ZTE,Smartphone,nubia Air Pro,512 GB,White,578151
 ZTE,Smartphone,nubia Neo 5 GT 5G,256 GB,Black,582706
-Xiaomi,Smartphone,Redmi A7 Pro,64 GB,Black,576413
-Xiaomi,Smartphone,Redmi A7 Pro,64 GB,BLUE,576415
-Xiaomi,Smartphone,Redmi A7 Pro,128 GB,Black,576519
-Xiaomi,Smartphone,Redmi A7 Pro,128 GB,BLUE,576520
-Xiaomi,Smartphone,Redmi A7 Pro,128 GB,GREEN,576522
-Xiaomi,Smartphone,Redmi 15C,128 GB,Black,467135
-Xiaomi,Smartphone,Redmi 15C,128 GB,ORANGE,467137
-Xiaomi,Smartphone,Redmi 15C,128 GB,BLUE,467138
-Xiaomi,Smartphone,Redmi 15C,256 GB,Black,467151
-Xiaomi,Smartphone,Redmi 15C,256 GB,GREEN,495999
-Xiaomi,Smartphone,Redmi 15C,256 GB,ORANGE,496008
-Xiaomi,Smartphone,Redmi 15C,256 GB,BLUE,496014
-Xiaomi,Smartphone,Redmi 17,128 GB,Black,595175
-Xiaomi,Smartphone,Redmi 17,128 GB,GREEN,595186
-Xiaomi,Smartphone,Redmi 17,128 GB,BLUE,595184
-Xiaomi,Smartphone,Redmi 17,256 GB,Black,595189
-Xiaomi,Smartphone,Redmi 17,256 GB,BLUE,595190
-Xiaomi,Smartphone,Redmi 17,256 GB,GREEN,595192
-Xiaomi,Smartphone,Redmi Note 15,128 GB,Black,563288
-Xiaomi,Smartphone,Redmi Note 15,128 GB,Glacier Blue,563385
-Xiaomi,Smartphone,Redmi Note 15,256 GB,Black,557247
-Xiaomi,Smartphone,Redmi Note 15,256 GB,Forest Green,557254
-Xiaomi,Smartphone,Redmi Note 15 5G,256 GB,Black,557278
-Xiaomi,Smartphone,Redmi Note 15 5G,256 GB,PURPLE,557285
-Xiaomi,Smartphone,Redmi Note 15 5G,512 GB,Black,563382
-Xiaomi,Smartphone,Redmi Note 15 5G,512 GB,PURPLE,564810
-Xiaomi,Smartphone,Redmi Note 15 5G,512 GB,Glacier Blue,564805
-Xiaomi,Smartphone,Redmi Note 15 Pro,256 GB,Black,557260
-Xiaomi,Smartphone,Redmi Note 15 Pro,256 GB,Glacier Blue,557266
-Xiaomi,Smartphone,Redmi Note 15 Pro,256 GB,TITANIO,557262
-Xiaomi,Smartphone,Redmi Note 15 Pro 5G,256 GB,BLACK,557269
-Xiaomi,Smartphone,Redmi Note 15 Pro 5G,512 GB,BLACK,563254
-Xiaomi,Smartphone,Redmi Note 15 Pro+ 5G,256 GB,BLACK,557274
-Xiaomi,Smartphone,17,512 GB,Ice Blue,565472
-Xiaomi,Smartphone,17,512 GB,Black,565448
-Xiaomi,Smartphone,17T,256 GB,Black,582785
-Xiaomi,Smartphone,17T,256 GB,Blu,582786
-Xiaomi,Smartphone,17T,256 GB,Viola,582787
-Xiaomi,Smartphone,17T,512 GB,Black,582797
-Xiaomi,Smartphone,17T,512 GB,Blu,582788
-Xiaomi,Smartphone,17T,512 GB,Viola,582799
-Xiaomi,Smartphone,17T Pro,512 GB,Black,582767
-Xiaomi,Smartphone,17T Pro,512 GB,Blu,582772
-Xiaomi,Smartphone,17T Pro,512 GB,Violet,582757
-Xiaomi,Smartphone,17 Ultra,512 GB,Black,565475
-Xiaomi,Smartphone,17 Ultra,512 GB,Starlit Green,565476

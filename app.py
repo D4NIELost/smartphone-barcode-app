@@ -724,7 +724,7 @@ def show_colors_view(df):
         'verde cedro': '#ADFF2F',
         'viola lavanda': '#9370DB',
         'grigio nebbia': '#E0E6E9',
-        'green': '#C1E1C1',
+        'green': '#008000',
         'forest green': '#3A4D39',
         'dark grey': '#4F4F4F',
         # Xiaomi specific colors
@@ -734,6 +734,17 @@ def show_colors_view(df):
         'blu': '#0000FF',
         'viola': '#EE82EE',
         'violet': '#8B7B8B',  # 17T Pro violet - muted purple/plum
+        # Honor specific colors
+        'cyan': '#00FFFF',
+        'midnight black': '#1A1A1A',
+        'nero': '#000000',
+        'grey': '#808080',
+        'orange': '#FFA500',
+        'red': '#FF0000',
+        'pink': '#FFC0CB',
+        'purple': '#800080',
+        'silver': '#C0C0C0',
+        'brown': '#A52A2A',
     }
     
     # Linear view for mobile

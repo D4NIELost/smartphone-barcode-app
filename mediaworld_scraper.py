@@ -485,8 +485,10 @@ def scrape_category_products(brand, category):
                 r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
                 r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
                 r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
-                # Remove specific color names at the end
+                # Remove specific color names at the end (expanded list)
                 r',\s*(Bronze Green|Lily Pad|Arabesque|Denim Blue|Forest Green|Scarab|Midnight Blue|Hematite|Sporting Green|Lily White|Blackened Blue|Carbon|Dark Shadow|Blue Jewel|Poinciana|Grisaille)\s*$',
+                r',\s*(Graphite|Cream|Lavender|Violet Shadow|Titanium Gray|Titanium Silverblue|Titanium Whitesilver|Titanium Black|Silver Shadow|Sky Blue|Cobalt Violet|Jetblack|Icyblue|Mint|Navy|Pink Gold|Awesome Charcoal|Awesome Lavender|Awesome Graygreen|Awesome White|Awesome Navy|Awesome Gray|Awesome Lilac|Awesome Icyblue)\s*$',
+                r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Ivory|Rose|Navy|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Mint|Shadow)\s*$',
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
@@ -1284,8 +1286,10 @@ def scrape_brand_only(brand):
                 r',\s*PANTONE\s+\S+(?:\s+\S+)*\s*$',
                 r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s*$',
                 r',\s*[A-Z]{2,}\s+[A-Z]{2,}\s+[A-Z]{2,}\s*$',
-                # Remove specific color names at the end
+                # Remove specific color names at the end (expanded list)
                 r',\s*(Bronze Green|Lily Pad|Arabesque|Denim Blue|Forest Green|Scarab|Midnight Blue|Hematite|Sporting Green|Lily White|Blackened Blue|Carbon|Dark Shadow|Blue Jewel|Poinciana|Grisaille)\s*$',
+                r',\s*(Graphite|Cream|Lavender|Violet Shadow|Titanium Gray|Titanium Silverblue|Titanium Whitesilver|Titanium Black|Silver Shadow|Sky Blue|Cobalt Violet|Jetblack|Icyblue|Mint|Navy|Pink Gold|Awesome Charcoal|Awesome Lavender|Awesome Graygreen|Awesome White|Awesome Navy|Awesome Gray|Awesome Lilac|Awesome Icyblue)\s*$',
+                r',\s*(Black|White|Blue|Green|Red|Yellow|Orange|Purple|Pink|Gray|Grey|Silver|Gold|Brown|Beige|Ivory|Rose|Navy|Titanium|Obsidian|Charcoal|Natural|Deep|Icy|Flowy|Cook|Asteroid|Mint|Shadow)\s*$',
             ]
             for pattern in bundle_patterns:
                 model = re.sub(pattern, '', model, flags=re.I)
