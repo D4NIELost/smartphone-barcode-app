@@ -165,7 +165,7 @@ def login_page():
 def main_app():
     """Display main application"""
     # Section selector
-    st.title("📱 Catalogo")
+    st.title("📱 Catalogo MW")
     st.caption(f"Versione: {APP_VERSION}")
     st.markdown("---")
     
@@ -745,6 +745,19 @@ def show_colors_view(df):
         'purple': '#800080',
         'silver': '#C0C0C0',
         'brown': '#A52A2A',
+        # Smartwatch specific colors
+        'matte silver': '#C0C0C0',
+        'light gold': '#faf7f0',
+        'obsidian black': '#0B0B0B',
+        'silver gray': '#A9A9A9',
+        'juniper green': '#2E8B57',
+        'mint green': '#98FF98',
+        'sunset gold': '#FFD700',
+        # Smartwatch colors with strap info
+        'black (fluororubber strap)': '#000000',
+        'mint green (fluororubber strap)': '#98FF98',
+        'white (leather strap)': '#FFFFFF',
+        'sunset gold (milanese strap)': '#FFD700',
     }
     
     # Linear view for mobile
@@ -797,6 +810,59 @@ def show_search_results(query):
     """Display search results for products and services matching the query"""
     query_lower = query.lower()
     
+    # Create fuzzy matching patterns (remove vowels for abbreviation matching)
+    query_no_vowels = ''.join(c for c in query_lower if c not in 'aeiou')
+    
+    # Synonym dictionary for common search terms
+    synonyms = {
+        'opaca': ['matt', 'matte'],
+        'opaco': ['matt', 'matte'],
+        'privacy': ['antispy'],
+        'privato': ['antispy'],
+    }
+    
+    # Get all search terms including synonyms
+    search_terms = [query_lower]
+    for key, values in synonyms.items():
+        if key in query_lower:
+            search_terms.extend(values)
+    
+    def fuzzy_match(text):
+        """Check if text matches query - ALL query words must be present"""
+        text_lower = str(text).lower()
+        text_no_vowels = ''.join(c for c in text_lower if c not in 'aeiou')
+        
+        # Split query into words
+        query_words = query_lower.split()
+        if not query_words:
+            return False
+        
+        # ALL words must be present in the text (AND logic)
+        for word in query_words:
+            word_found = False
+            
+            # Check direct match
+            if word in text_lower:
+                word_found = True
+            else:
+                # Check abbreviation match
+                word_no_vowels = ''.join(c for c in word if c not in 'aeiou')
+                if word_no_vowels and word_no_vowels in text_no_vowels:
+                    word_found = True
+            
+            # If word not found, check synonyms
+            if not word_found:
+                for key, values in synonyms.items():
+                    if key in word:
+                        for synonym in values:
+                            if synonym in text_lower:
+                                word_found = True
+                                break
+                if not word_found:
+                    return False
+        
+        return True
+    
     # Search in all phone databases
     phone_results = []
     for csv_file, cat_name in [(SMARTPHONE_CSV_FILE, 'Smartphone'), 
@@ -806,11 +872,21 @@ def show_search_results(query):
         if os.path.exists(csv_file):
             try:
                 df = pd.read_csv(csv_file, dtype={'Codice_PIM': str})
-                cat_results = df[
-                    df['Modello'].str.lower().str.contains(query_lower, na=False) |
-                    df['Marca'].str.lower().str.contains(query_lower, na=False) |
-                    df['Codice_PIM'].astype(str).str.contains(query_lower, na=False)
-                ]
+                # Combine relevant columns into a single text for each row
+                # This allows words to match across different columns (e.g., "honor" in Marca, "400" in Modello)
+                def combine_columns(row):
+                    parts = []
+                    if 'Marca' in row:
+                        parts.append(str(row['Marca']))
+                    if 'Modello' in row:
+                        parts.append(str(row['Modello']))
+                    if 'Codice_PIM' in row:
+                        parts.append(str(row['Codice_PIM']))
+                    return ' '.join(parts)
+                
+                df['combined_text'] = df.apply(combine_columns, axis=1)
+                mask = df['combined_text'].apply(fuzzy_match)
+                cat_results = df[mask]
                 if not cat_results.empty:
                     phone_results.append(cat_results)
             except Exception as e:
@@ -827,12 +903,13 @@ def show_search_results(query):
     
     service_results = None
     if df_services is not None:
-        service_results = df_services[
-            df_services['Servizio'].str.lower().str.contains(query_lower, na=False) |
-            df_services['Categoria'].str.lower().str.contains(query_lower, na=False) |
-            df_services['Sottocategoria'].str.lower().str.contains(query_lower, na=False) |
-            df_services['Codice'].astype(str).str.contains(query_lower, na=False)
-        ]
+        mask = (
+            df_services['Servizio'].apply(fuzzy_match) |
+            df_services['Categoria'].apply(fuzzy_match) |
+            df_services['Sottocategoria'].apply(fuzzy_match) |
+            df_services['Codice'].astype(str).apply(fuzzy_match)
+        )
+        service_results = df_services[mask]
     
     # Check if any results found
     has_phone_results = phone_results is not None and not phone_results.empty
