@@ -165,7 +165,7 @@ def login_page():
 def main_app():
     """Display main application"""
     # Section selector
-    st.title("📱 Catalogo Dispositivi")
+    st.title("📱 Catalogo")
     st.caption(f"Versione: {APP_VERSION}")
     st.markdown("---")
     
