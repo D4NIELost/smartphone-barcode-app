@@ -1313,14 +1313,9 @@ def admin_app():
     
     # Download section
     st.subheader("📥 Scarica Database Modificati")
-    st.info("💡 Visualizza e scarica i file CSV modificati per sincronizzarli con il tuo computer locale")
+    st.info("💡 Scarica i file CSV modificati per sincronizzarli con il tuo computer locale")
     
     try:
-        # Show CSV content first
-        with st.expander("👁️ Anteprima contenuto CSV", expanded=False):
-            st.dataframe(df, use_container_width=True)
-        
-        # Download button as secondary option
         with open(selected_db_file, 'rb') as f:
             csv_data = f.read()
         
@@ -1328,8 +1323,7 @@ def admin_app():
             label=f"📥 Scarica {selected_db_name}",
             data=csv_data,
             file_name=os.path.basename(selected_db_file),
-            mime='text/csv',
-            key=f"download_{selected_db_name}"
+            mime='text/csv'
         )
     except Exception as e:
         st.error(f"❌ Errore durante la preparazione del download: {e}")
