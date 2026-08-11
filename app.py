@@ -1188,8 +1188,11 @@ def admin_app():
                     st.success("✅ Riga aggiunta con successo!")
                     st.balloons()
                     st.toast("Salvataggio completato!", icon="✅")
-                    time.sleep(1.5)
-                    st.rerun()
+                    
+                    # Clear input fields by updating session state keys
+                    for col in columns:
+                        if f"add_{col}" in st.session_state:
+                            del st.session_state[f"add_{col}"]
                 except Exception as e:
                     st.error(f"❌ Errore durante il salvataggio: {e}")
     
@@ -1252,8 +1255,9 @@ def admin_app():
                         st.success("✅ Riga modificata con successo!")
                         st.balloons()
                         st.toast("Modifiche salvate!", icon="✏️")
-                        time.sleep(1.5)
-                        st.rerun()
+                        
+                        # Reload dataframe to show updated data
+                        df = pd.read_csv(selected_db_file, dtype={'Codice_PIM': str, 'Codice': str})
                     except Exception as e:
                         st.error(f"❌ Errore durante il salvataggio: {e}")
     
@@ -1301,13 +1305,14 @@ def admin_app():
                             st.success("✅ Riga rimossa con successo!")
                             st.balloons()
                             st.toast("Riga eliminata!", icon="🗑️")
-                            time.sleep(1.5)
-                            st.rerun()
+                            
+                            # Reload dataframe to show updated data
+                            df = pd.read_csv(selected_db_file, dtype={'Codice_PIM': str, 'Codice': str})
                         except Exception as e:
                             st.error(f"❌ Errore durante la rimozione: {e}")
                 with col2:
                     if st.button("❌ Annulla", key="cancel_remove_btn"):
-                        st.rerun()
+                        st.info("Operazione annullata")
     
     st.markdown("---")
     
