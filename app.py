@@ -122,6 +122,10 @@ def git_commit_and_push(message):
         # Get the repository root directory
         repo_root = os.path.dirname(os.path.abspath(__file__))
         
+        # Configure git user identity if not set (required for commit)
+        subprocess.run(['git', 'config', 'user.email', 'admin@smartphone-barcode-app'], cwd=repo_root, check=True, capture_output=True)
+        subprocess.run(['git', 'config', 'user.name', 'Admin App'], cwd=repo_root, check=True, capture_output=True)
+        
         # Add databases folder
         subprocess.run(['git', 'add', 'databases/'], cwd=repo_root, check=True, capture_output=True)
         
