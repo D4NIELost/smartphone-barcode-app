@@ -1,3 +1,5 @@
 .venv/bin/streamlit run app.py
 
-mediaworld_scraper.py --import
+
+cd /Users/danielbuemi/CascadeProjects/smartphone-barcode-app
+git pull

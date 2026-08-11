@@ -5,20 +5,30 @@ from barcode.writer import ImageWriter
 from io import BytesIO
 from PIL import Image
 import os
+import hashlib
+import secrets
+import time
 
 # Configuration
-# PASSWORD = "negozio2026"  # Change this to your desired password (disabled for now)
-PASSWORD = None  # Set to None to disable password authentication
+# Generate a secure password hash using: python -c "import hashlib, secrets; salt = secrets.token_hex(16); print(f'SALT={salt}'); print(f'PASSWORD_HASH={hashlib.sha256((\"your_password\" + salt).encode()).hexdigest()}')"
+# Replace the values below with your generated salt and hash
+SALT = "104400c1965d483e027b4780011d2563"
+PASSWORD_HASH = "6a9fd0d08b82c52634eb8d27a80908d5ea9715a8f81edef175057ee991d31fd4"
+ADMIN_PASSWORD_ENABLED = True  # Set to True to enable admin password
 SMARTPHONE_CSV_FILE = "databases/database_smartphone.csv"
 SMARTWATCH_CSV_FILE = "databases/database_smartwatch.csv"
 TABLET_CSV_FILE = "databases/database_tablet.csv"
 NOTEBOOK_CSV_FILE = "databases/database_notebook.csv"
 SERVICES_CSV_FILE = "databases/database_servizi.csv"
-APP_VERSION = "2.0"  # Version to verify deployment
+APP_VERSION = "2.1"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = PASSWORD is None  # Auto-authenticate if password is disabled
+    st.session_state.authenticated = True  # Always auto-authenticate for normal app access
+if 'admin_authenticated' not in st.session_state:
+    st.session_state.admin_authenticated = False
+if 'show_admin_login' not in st.session_state:
+    st.session_state.show_admin_login = False
 if 'current_section' not in st.session_state:
     st.session_state.current_section = 'phones'  # 'phones' or 'services'
 if 'selected_brand' not in st.session_state:
@@ -95,6 +105,16 @@ def load_database(category=None):
         st.error(f"Errore nel caricamento del database: {e}")
         return None
 
+def verify_password(password):
+    """Verify password against hash"""
+    if not ADMIN_PASSWORD_ENABLED:
+        return True
+    if SALT == "YOUR_SALT_HERE" or PASSWORD_HASH == "YOUR_PASSWORD_HASH_HERE":
+        st.error("⚠️ Password admin non configurata. Configura SALT e PASSWORD_HASH nel codice.")
+        return False
+    password_hash = hashlib.sha256((password + SALT).encode()).hexdigest()
+    return password_hash == PASSWORD_HASH
+
 def load_services_database():
     """Load services database from CSV file"""
     try:
@@ -156,7 +176,7 @@ def login_page():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("Accedi", width='stretch'):
-            if password == PASSWORD:
+            if verify_password(password):
                 st.session_state.authenticated = True
                 st.rerun()
             else:
@@ -167,7 +187,37 @@ def main_app():
     # Section selector
     st.title("📱 Catalogo MW")
     st.caption(f"Versione: {APP_VERSION}")
+    
+    # Admin icon (small and discreet)
+    col_admin = st.columns([10, 1])
+    with col_admin[1]:
+        if st.button("⚙️", key="admin_icon", help="Accesso Admin"):
+            if not st.session_state.admin_authenticated:
+                st.session_state.show_admin_login = True
+            else:
+                st.session_state.current_section = 'admin'
+                st.rerun()
+    
     st.markdown("---")
+    
+    # Admin login popup
+    if st.session_state.get('show_admin_login', False):
+        with st.expander("🔐 Accesso Admin", expanded=True):
+            admin_password = st.text_input("Password Admin:", type="password", key="admin_password_input")
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("Accedi", key="admin_login_btn"):
+                    if verify_password(admin_password):
+                        st.session_state.admin_authenticated = True
+                        st.session_state.show_admin_login = False
+                        st.success("✅ Accesso admin effettuato!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Password errata!")
+            with col2:
+                if st.button("Annulla", key="admin_cancel_btn"):
+                    st.session_state.show_admin_login = False
+                    st.rerun()
     
     # CSS for active button highlighting
     if st.session_state.current_section == 'phones':
@@ -232,7 +282,14 @@ def main_app():
                 st.rerun()
     
     # Route to appropriate section
-    if st.session_state.current_section == 'services':
+    if st.session_state.current_section == 'admin':
+        if st.session_state.admin_authenticated:
+            admin_app()
+        else:
+            st.error("⚠️ Accesso non autorizzato")
+            st.session_state.current_section = 'phones'
+            st.rerun()
+    elif st.session_state.current_section == 'services':
         services_app()
     else:
         phones_app()
@@ -252,10 +309,11 @@ def main_app():
             reset_all_state()
             st.rerun()
     with col3:
-        if PASSWORD is not None:  # Show logout button only if password is enabled
-            if st.button("🚪 Logout", width='stretch'):
-                st.session_state.authenticated = False
-                reset_all_state()
+        # Show logout button only when in admin mode
+        if st.session_state.admin_authenticated and st.session_state.current_section == 'admin':
+            if st.button("🚪 Esci Admin", width='stretch'):
+                st.session_state.admin_authenticated = False
+                st.session_state.current_section = 'phones'
                 st.rerun()
 
 def reset_all_state():
@@ -1059,6 +1117,204 @@ def show_service_view(df):
         if barcode_img is not None:
             st.image(barcode_img, width=400)
             st.success("Codice a barre generato con successo!")
+
+def admin_app():
+    """Display admin interface for database management"""
+    st.title("⚙️ Gestione Database")
+    st.markdown("---")
+    
+    # Database selection
+    database_options = {
+        'Servizi': SERVICES_CSV_FILE,
+        'Smartphone': SMARTPHONE_CSV_FILE,
+        'Smartwatch': SMARTWATCH_CSV_FILE,
+        'Tablet': TABLET_CSV_FILE,
+        'Notebook': NOTEBOOK_CSV_FILE
+    }
+    
+    selected_db_name = st.selectbox("📁 Seleziona Database:", list(database_options.keys()))
+    selected_db_file = database_options[selected_db_name]
+    
+    st.info(f"📂 File: `{selected_db_file}`")
+    st.markdown("---")
+    
+    # Load selected database
+    try:
+        if os.path.exists(selected_db_file):
+            df = pd.read_csv(selected_db_file, dtype={'Codice_PIM': str, 'Codice': str})
+        else:
+            st.error(f"File {selected_db_file} non trovato")
+            return
+    except Exception as e:
+        st.error(f"Errore nel caricamento del database: {e}")
+        return
+    
+    # Display current database
+    st.subheader(f"📋 Database {selected_db_name} Attuale")
+    st.dataframe(df, use_container_width=True)
+    
+    st.markdown("---")
+    
+    # Action selection
+    action = st.radio("Seleziona azione:", ["➕ Aggiungi Riga", "✏️ Modifica Riga", "🗑️ Rimuovi Riga"])
+    
+    columns = df.columns.tolist()
+    
+    if action == "➕ Aggiungi Riga":
+        st.subheader("➕ Aggiungi Nuova Riga")
+        
+        # Create input fields for each column
+        new_row_data = {}
+        cols_per_row = 2
+        col_groups = [columns[i:i + cols_per_row] for i in range(0, len(columns), cols_per_row)]
+        
+        for group in col_groups:
+            cols = st.columns(len(group))
+            for idx, col in enumerate(group):
+                with cols[idx]:
+                    new_row_data[col] = st.text_input(f"{col}*", placeholder=f"Inserisci {col}", key=f"add_{col}")
+        
+        if st.button("💾 Salva Nuova Riga"):
+            if not all(new_row_data.values()):
+                st.error("❌ Tutti i campi sono obbligatori!")
+            else:
+                try:
+                    # Add new row
+                    new_row = pd.DataFrame([new_row_data])
+                    df = pd.concat([df, new_row], ignore_index=True)
+                    df.to_csv(selected_db_file, index=False)
+                    
+                    # Show success message with visual feedback
+                    st.success("✅ Riga aggiunta con successo!")
+                    st.balloons()
+                    st.toast("Salvataggio completato!", icon="✅")
+                    time.sleep(1.5)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Errore durante il salvataggio: {e}")
+    
+    elif action == "✏️ Modifica Riga":
+        st.subheader("✏️ Modifica Riga Esistente")
+        
+        # Add filter for Marca if available
+        filtered_df = df.copy()
+        
+        if 'Marca' in columns:
+            unique_brands = ['Tutte'] + sorted(df['Marca'].unique().tolist())
+            selected_brand = st.selectbox("🏷️ Filtra per Marca:", unique_brands, key="edit_filter_brand")
+            if selected_brand != 'Tutte':
+                filtered_df = filtered_df[filtered_df['Marca'] == selected_brand]
+        
+        # Select row to edit from filtered results
+        if filtered_df.empty:
+            st.warning("Nessuna riga trovata con i filtri selezionati")
+        else:
+            # Map filtered indices back to original dataframe
+            filtered_indices = filtered_df.index.tolist()
+            row_options = filtered_df.apply(lambda row: " | ".join([f"{col}: {val}" for col, val in row.items()]), axis=1).tolist()
+            
+            selected_filtered_idx = st.selectbox(
+                "Seleziona riga da modificare:", 
+                range(len(row_options)), 
+                format_func=lambda x: row_options[x][:100] + "..." if len(row_options[x]) > 100 else row_options[x],
+                key="edit_row_selector"
+            )
+            
+            if selected_filtered_idx is not None:
+                original_idx = filtered_indices[selected_filtered_idx]
+                selected_row = df.iloc[original_idx]
+                
+                # Create input fields for each column with current values
+                updated_row_data = {}
+                cols_per_row = 2
+                col_groups = [columns[i:i + cols_per_row] for i in range(0, len(columns), cols_per_row)]
+                
+                for group in col_groups:
+                    cols = st.columns(len(group))
+                    for idx, col in enumerate(group):
+                        with cols[idx]:
+                            # Use unique key with original index to force refresh
+                            updated_row_data[col] = st.text_input(
+                                f"{col}", 
+                                value=str(selected_row[col]), 
+                                key=f"edit_field_{col}_{original_idx}"
+                            )
+                
+                if st.button("💾 Salva Modifiche", key="save_edit_btn"):
+                    try:
+                        # Update row
+                        for col in columns:
+                            df.at[original_idx, col] = updated_row_data[col]
+                        
+                        df.to_csv(selected_db_file, index=False)
+                        
+                        # Show success message with visual feedback
+                        st.success("✅ Riga modificata con successo!")
+                        st.balloons()
+                        st.toast("Modifiche salvate!", icon="✏️")
+                        time.sleep(1.5)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Errore durante il salvataggio: {e}")
+    
+    elif action == "🗑️ Rimuovi Riga":
+        st.subheader("🗑️ Rimuovi Riga")
+        
+        # Add filter for Marca if available
+        filtered_df = df.copy()
+        
+        if 'Marca' in columns:
+            unique_brands = ['Tutte'] + sorted(df['Marca'].unique().tolist())
+            selected_brand = st.selectbox("🏷️ Filtra per Marca:", unique_brands, key="remove_filter_brand")
+            if selected_brand != 'Tutte':
+                filtered_df = filtered_df[filtered_df['Marca'] == selected_brand]
+        
+        # Select row to remove from filtered results
+        if filtered_df.empty:
+            st.warning("Nessuna riga trovata con i filtri selezionati")
+        else:
+            # Map filtered indices back to original dataframe
+            filtered_indices = filtered_df.index.tolist()
+            row_options = filtered_df.apply(lambda row: " | ".join([f"{col}: {val}" for col, val in row.items()]), axis=1).tolist()
+            
+            selected_filtered_idx = st.selectbox(
+                "Seleziona riga da rimuovere:", 
+                range(len(row_options)), 
+                format_func=lambda x: row_options[x][:100] + "..." if len(row_options[x]) > 100 else row_options[x],
+                key="remove_row_selector"
+            )
+            
+            if selected_filtered_idx is not None:
+                original_idx = filtered_indices[selected_filtered_idx]
+                selected_row = df.iloc[original_idx]
+                row_preview = " | ".join([f"{col}: {val}" for col, val in selected_row.items()])
+                st.warning(f"Sei sicuro di voler rimuovere questa riga?\n\n{row_preview[:200]}...")
+                
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.button("🗑️ Conferma Rimozione", type="primary", key="confirm_remove_btn"):
+                        try:
+                            df = df.drop(original_idx).reset_index(drop=True)
+                            df.to_csv(selected_db_file, index=False)
+                            
+                            # Show success message with visual feedback
+                            st.success("✅ Riga rimossa con successo!")
+                            st.balloons()
+                            st.toast("Riga eliminata!", icon="🗑️")
+                            time.sleep(1.5)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Errore durante la rimozione: {e}")
+                with col2:
+                    if st.button("❌ Annulla", key="cancel_remove_btn"):
+                        st.rerun()
+    
+    st.markdown("---")
+    st.info("💡 Le modifiche vengono salvate direttamente nei file CSV del progetto nella cartella `databases/`")
+    
+    if st.button("🏠 Torna alla Home"):
+        st.session_state.current_section = 'phones'
+        st.rerun()
 
 def main():
     """Main application logic"""
