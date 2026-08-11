@@ -16,12 +16,19 @@ import subprocess
 SALT = "104400c1965d483e027b4780011d2563"
 PASSWORD_HASH = "6a9fd0d08b82c52634eb8d27a80908d5ea9715a8f81edef175057ee991d31fd4"
 ADMIN_PASSWORD_ENABLED = True  # Set to True to enable admin password
+
+# Git configuration for manual sync (optional)
+# If you want automatic sync, generate a Personal Access Token at: https://github.com/settings/tokens
+# Select 'repo' scope and configure the values below
+GIT_USERNAME = ""  # Your GitHub username (leave empty for manual sync only)
+GIT_TOKEN = ""  # Your GitHub Personal Access Token (leave empty for manual sync only)
+AUTO_GIT_SYNC = False  # Set to True to enable automatic git sync (requires credentials above)
 SMARTPHONE_CSV_FILE = "databases/database_smartphone.csv"
 SMARTWATCH_CSV_FILE = "databases/database_smartwatch.csv"
 TABLET_CSV_FILE = "databases/database_tablet.csv"
 NOTEBOOK_CSV_FILE = "databases/database_notebook.csv"
 SERVICES_CSV_FILE = "databases/database_servizi.csv"
-APP_VERSION = "2.1"  # Version to verify deployment
+APP_VERSION = "2.2"  # Version to verify deployment
 
 # Initialize session state
 if 'authenticated' not in st.session_state:
@@ -119,12 +126,24 @@ def verify_password(password):
 def git_commit_and_push(message):
     """Execute git add, commit and push for database changes"""
     try:
+        # Check if auto git sync is enabled
+        if not AUTO_GIT_SYNC:
+            return False, "Sincronizzazione automatica disabilitata. Usa il pulsante 'Sincronizza GitHub' manualmente."
+        
+        # Check if git credentials are configured
+        if not GIT_USERNAME or not GIT_TOKEN:
+            return False, "Credenziali Git non configurate. Imposta GIT_USERNAME e GIT_TOKEN in app.py o usa sincronizzazione manuale."
+        
         # Get the repository root directory
         repo_root = os.path.dirname(os.path.abspath(__file__))
         
         # Configure git user identity if not set (required for commit)
         subprocess.run(['git', 'config', 'user.email', 'admin@smartphone-barcode-app'], cwd=repo_root, check=True, capture_output=True)
         subprocess.run(['git', 'config', 'user.name', 'Admin App'], cwd=repo_root, check=True, capture_output=True)
+        
+        # Configure git credentials for push
+        git_url_with_auth = f"https://{GIT_USERNAME}:{GIT_TOKEN}@github.com/D4NIELost/smartphone-barcode-app.git"
+        subprocess.run(['git', 'remote', 'set-url', 'origin', git_url_with_auth], cwd=repo_root, check=True, capture_output=True)
         
         # Add databases folder
         subprocess.run(['git', 'add', 'databases/'], cwd=repo_root, check=True, capture_output=True)
@@ -1216,13 +1235,16 @@ def admin_app():
                     st.balloons()
                     st.toast("Salvataggio completato!", icon="✅")
                     
-                    # Try to sync with git
-                    with st.spinner("🔄 Sincronizzazione con GitHub..."):
-                        git_success, git_error = git_commit_and_push(f"Aggiunta riga in {selected_db_name}")
-                        if git_success:
-                            st.success("🚀 Sincronizzazione GitHub completata!")
-                        else:
-                            st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                    # Try to sync with git if enabled
+                    if AUTO_GIT_SYNC:
+                        with st.spinner("🔄 Sincronizzazione con GitHub..."):
+                            git_success, git_error = git_commit_and_push(f"Aggiunta riga in {selected_db_name}")
+                            if git_success:
+                                st.success("🚀 Sincronizzazione GitHub completata!")
+                            else:
+                                st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                    else:
+                        st.info("💡 Modifiche salvate localmente. Usa 'Sincronizza GitHub' per inviare a GitHub.")
                     
                     time.sleep(1.5)
                     st.rerun()
@@ -1289,13 +1311,16 @@ def admin_app():
                         st.balloons()
                         st.toast("Modifiche salvate!", icon="✏️")
                         
-                        # Try to sync with git
-                        with st.spinner("🔄 Sincronizzazione con GitHub..."):
-                            git_success, git_error = git_commit_and_push(f"Modifica riga in {selected_db_name}")
-                            if git_success:
-                                st.success("🚀 Sincronizzazione GitHub completata!")
-                            else:
-                                st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                        # Try to sync with git if enabled
+                        if AUTO_GIT_SYNC:
+                            with st.spinner("🔄 Sincronizzazione con GitHub..."):
+                                git_success, git_error = git_commit_and_push(f"Modifica riga in {selected_db_name}")
+                                if git_success:
+                                    st.success("🚀 Sincronizzazione GitHub completata!")
+                                else:
+                                    st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                        else:
+                            st.info("💡 Modifiche salvate localmente. Usa 'Sincronizza GitHub' per inviare a GitHub.")
                         
                         time.sleep(1.5)
                         st.rerun()
@@ -1347,13 +1372,16 @@ def admin_app():
                             st.balloons()
                             st.toast("Riga eliminata!", icon="🗑️")
                             
-                            # Try to sync with git
-                            with st.spinner("🔄 Sincronizzazione con GitHub..."):
-                                git_success, git_error = git_commit_and_push(f"Rimozione riga in {selected_db_name}")
-                                if git_success:
-                                    st.success("🚀 Sincronizzazione GitHub completata!")
-                                else:
-                                    st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                            # Try to sync with git if enabled
+                            if AUTO_GIT_SYNC:
+                                with st.spinner("🔄 Sincronizzazione con GitHub..."):
+                                    git_success, git_error = git_commit_and_push(f"Rimozione riga in {selected_db_name}")
+                                    if git_success:
+                                        st.success("🚀 Sincronizzazione GitHub completata!")
+                                    else:
+                                        st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                            else:
+                                st.info("💡 Modifiche salvate localmente. Usa 'Sincronizza GitHub' per inviare a GitHub.")
                             
                             time.sleep(1.5)
                             st.rerun()
@@ -1365,6 +1393,21 @@ def admin_app():
     
     st.markdown("---")
     st.info("💡 Le modifiche vengono salvate direttamente nei file CSV del progetto nella cartella `databases/`")
+    
+    # Manual sync button
+    if not AUTO_GIT_SYNC:
+        st.markdown("---")
+        st.subheader("🔄 Sincronizzazione Manuale")
+        st.info("Sincronizza le modifiche locali con GitHub quando sei pronto.")
+        
+        if st.button("🚀 Sincronizza GitHub", type="primary"):
+            with st.spinner("🔄 Sincronizzazione con GitHub in corso..."):
+                git_success, git_error = git_commit_and_push("Sincronizzazione manuale database")
+                if git_success:
+                    st.success("🚀 Sincronizzazione GitHub completata con successo!")
+                    st.balloons()
+                else:
+                    st.error(f"❌ Sincronizzazione fallita: {git_error}")
     
     if st.button("🏠 Torna alla Home"):
         st.session_state.current_section = 'phones'
