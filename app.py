@@ -8,6 +8,7 @@ import os
 import hashlib
 import secrets
 import time
+import subprocess
 
 # Configuration
 # Generate a secure password hash using: python -c "import hashlib, secrets; salt = secrets.token_hex(16); print(f'SALT={salt}'); print(f'PASSWORD_HASH={hashlib.sha256((\"your_password\" + salt).encode()).hexdigest()}')"
@@ -114,6 +115,28 @@ def verify_password(password):
         return False
     password_hash = hashlib.sha256((password + SALT).encode()).hexdigest()
     return password_hash == PASSWORD_HASH
+
+def git_commit_and_push(message):
+    """Execute git add, commit and push for database changes"""
+    try:
+        # Get the repository root directory
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        
+        # Add databases folder
+        subprocess.run(['git', 'add', 'databases/'], cwd=repo_root, check=True, capture_output=True)
+        
+        # Commit with message
+        subprocess.run(['git', 'commit', '-m', message], cwd=repo_root, check=True, capture_output=True)
+        
+        # Push to remote
+        subprocess.run(['git', 'push'], cwd=repo_root, check=True, capture_output=True)
+        
+        return True, None
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Errore git: {e.stderr.decode() if e.stderr else str(e)}"
+        return False, error_msg
+    except Exception as e:
+        return False, f"Errore durante sincronizzazione git: {str(e)}"
 
 def load_services_database():
     """Load services database from CSV file"""
@@ -1188,6 +1211,15 @@ def admin_app():
                     st.success("✅ Riga aggiunta con successo!")
                     st.balloons()
                     st.toast("Salvataggio completato!", icon="✅")
+                    
+                    # Try to sync with git
+                    with st.spinner("🔄 Sincronizzazione con GitHub..."):
+                        git_success, git_error = git_commit_and_push(f"Aggiunta riga in {selected_db_name}")
+                        if git_success:
+                            st.success("🚀 Sincronizzazione GitHub completata!")
+                        else:
+                            st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                    
                     time.sleep(1.5)
                     st.rerun()
                 except Exception as e:
@@ -1252,6 +1284,15 @@ def admin_app():
                         st.success("✅ Riga modificata con successo!")
                         st.balloons()
                         st.toast("Modifiche salvate!", icon="✏️")
+                        
+                        # Try to sync with git
+                        with st.spinner("🔄 Sincronizzazione con GitHub..."):
+                            git_success, git_error = git_commit_and_push(f"Modifica riga in {selected_db_name}")
+                            if git_success:
+                                st.success("🚀 Sincronizzazione GitHub completata!")
+                            else:
+                                st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                        
                         time.sleep(1.5)
                         st.rerun()
                     except Exception as e:
@@ -1301,6 +1342,15 @@ def admin_app():
                             st.success("✅ Riga rimossa con successo!")
                             st.balloons()
                             st.toast("Riga eliminata!", icon="🗑️")
+                            
+                            # Try to sync with git
+                            with st.spinner("🔄 Sincronizzazione con GitHub..."):
+                                git_success, git_error = git_commit_and_push(f"Rimozione riga in {selected_db_name}")
+                                if git_success:
+                                    st.success("🚀 Sincronizzazione GitHub completata!")
+                                else:
+                                    st.warning(f"⚠️ Salvataggio locale OK, ma sincronizzazione GitHub fallita: {git_error}")
+                            
                             time.sleep(1.5)
                             st.rerun()
                         except Exception as e:
