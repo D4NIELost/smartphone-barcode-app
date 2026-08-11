@@ -1188,11 +1188,8 @@ def admin_app():
                     st.success("✅ Riga aggiunta con successo!")
                     st.balloons()
                     st.toast("Salvataggio completato!", icon="✅")
-                    
-                    # Clear input fields by updating session state keys
-                    for col in columns:
-                        if f"add_{col}" in st.session_state:
-                            del st.session_state[f"add_{col}"]
+                    time.sleep(1.5)
+                    st.rerun()
                 except Exception as e:
                     st.error(f"❌ Errore durante il salvataggio: {e}")
     
@@ -1255,9 +1252,8 @@ def admin_app():
                         st.success("✅ Riga modificata con successo!")
                         st.balloons()
                         st.toast("Modifiche salvate!", icon="✏️")
-                        
-                        # Reload dataframe to show updated data
-                        df = pd.read_csv(selected_db_file, dtype={'Codice_PIM': str, 'Codice': str})
+                        time.sleep(1.5)
+                        st.rerun()
                     except Exception as e:
                         st.error(f"❌ Errore durante il salvataggio: {e}")
     
@@ -1305,22 +1301,26 @@ def admin_app():
                             st.success("✅ Riga rimossa con successo!")
                             st.balloons()
                             st.toast("Riga eliminata!", icon="🗑️")
-                            
-                            # Reload dataframe to show updated data
-                            df = pd.read_csv(selected_db_file, dtype={'Codice_PIM': str, 'Codice': str})
+                            time.sleep(1.5)
+                            st.rerun()
                         except Exception as e:
                             st.error(f"❌ Errore durante la rimozione: {e}")
                 with col2:
                     if st.button("❌ Annulla", key="cancel_remove_btn"):
-                        st.info("Operazione annullata")
+                        st.rerun()
     
     st.markdown("---")
     
     # Download section
     st.subheader("📥 Scarica Database Modificati")
-    st.info("💡 Scarica i file CSV modificati per sincronizzarli con il tuo computer locale")
+    st.info("💡 Visualizza e scarica i file CSV modificati per sincronizzarli con il tuo computer locale")
     
     try:
+        # Show CSV content first
+        with st.expander("👁️ Anteprima contenuto CSV", expanded=False):
+            st.dataframe(df, use_container_width=True)
+        
+        # Download button as secondary option
         with open(selected_db_file, 'rb') as f:
             csv_data = f.read()
         
@@ -1328,7 +1328,8 @@ def admin_app():
             label=f"📥 Scarica {selected_db_name}",
             data=csv_data,
             file_name=os.path.basename(selected_db_file),
-            mime='text/csv'
+            mime='text/csv',
+            key=f"download_{selected_db_name}"
         )
     except Exception as e:
         st.error(f"❌ Errore durante la preparazione del download: {e}")
